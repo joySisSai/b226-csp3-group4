@@ -1,0 +1,237 @@
+Project BarangayConnect {
+  database_type: "MySQL"
+  Note: "Corrected physical ERD for MySQL 8.0+"
+}
+
+Enum household_status_enum {
+  ACTIVE
+  INACTIVE
+}
+
+Enum request_status_enum {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  RELEASED
+  REJECTED
+  CANCELLED
+}
+
+Enum sex_enum {
+  MALE
+  FEMALE
+  PREFER_NOT_TO_SAY
+}
+
+Enum civil_status_enum {
+  SINGLE
+  MARRIED
+  WIDOWED
+  SEPARATED
+  OTHER
+}
+
+Enum residency_status_enum {
+  ACTIVE
+  TRANSFERRED
+  DECEASED
+  INACTIVE
+}
+
+Enum user_role_enum {
+  RESIDENT
+  STAFF
+  ADMIN
+}
+
+Enum account_status_enum {
+  PENDING_ACTIVATION
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+
+Table households {
+  household_id "int unsigned" [pk, increment, not null]
+  household_code varchar(30) [unique, not null]
+  address_line varchar(255) [not null]
+  purok varchar(100)
+  household_status household_status_enum [not null, default: 'ACTIVE']
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+
+  indexes {
+    purok [name: "idx_households_purok"]
+    household_status [name: "idx_households_status"]
+  }
+}
+
+Table residents {
+  resident_id "int unsigned" [pk, increment, not null]
+  resident_code varchar(30) [unique, not null]
+  household_id "int unsigned"
+  first_name varchar(80) [not null]
+  middle_name varchar(80)
+  last_name varchar(80) [not null]
+  suffix varchar(20)
+  birth_date date [not null]
+  sex sex_enum [not null]
+  civil_status civil_status_enum [not null]
+  contact_number varchar(30)
+  email varchar(120)
+  occupation varchar(120)
+  is_registered_voter boolean [not null, default: false]
+  is_household_head boolean [not null, default: false]
+  residency_status residency_status_enum [not null, default: 'ACTIVE']
+  date_registered date [not null]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+
+  indexes {
+    (last_name, first_name) [name: "idx_residents_name"]
+    household_id [name: "idx_residents_household"]
+    residency_status [name: "idx_residents_status"]
+    birth_date [name: "idx_residents_birth_date"]
+  }
+}
+
+Table users {
+  user_id "int unsigned" [pk, increment, not null]
+  resident_id "int unsigned" [unique, note: "Required for RESIDENT role; must be NULL for STAFF and ADMIN"]
+  username varchar(50) [unique, not null]
+  password_hash varchar(255) [not null]
+  display_name varchar(150) [not null]
+  role user_role_enum [not null]
+  account_status account_status_enum [not null, default: 'PENDING_ACTIVATION']
+  failed_login_attempts "smallint unsigned" [not null, default: 0]
+  last_login_at datetime
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+
+  indexes {
+    (role, account_status) [name: "idx_users_role_status"]
+  }
+
+  Note: "CHECK: (role = 'RESIDENT' AND resident_id IS NOT NULL) OR (role IN ('STAFF', 'ADMIN') AND resident_id IS NULL)"
+}
+
+Table service_types {
+  service_type_id "smallint unsigned" [pk, increment, not null]
+  service_code varchar(30) [unique, not null]
+  service_name varchar(120) [unique, not null]
+  description varchar(500)
+  default_fee decimal(10,2) [not null, default: 0.00, note: "CHECK default_fee >= 0"]
+  expected_processing_days "smallint unsigned" [not null, default: 1]
+  is_active boolean [not null, default: true]
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+}
+
+Table service_requests {
+  request_id "bigint unsigned" [pk, increment, not null]
+  request_number varchar(40) [unique, not null]
+  resident_id "int unsigned" [not null]
+  service_type_id "smallint unsigned" [not null]
+  purpose varchar(500) [not null]
+  request_date date [not null]
+  service_fee_snapshot decimal(10,2) [not null, default: 0.00, note: "CHECK service_fee_snapshot >= 0"]
+  status request_status_enum [not null, default: 'PENDING']
+  remarks varchar(1000)
+  created_by_user_id "int unsigned" [not null]
+  processed_by_user_id "int unsigned"
+  processed_at datetime
+  released_at datetime
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  updated_at timestamp [not null, default: `CURRENT_TIMESTAMP`, note: "ON UPDATE CURRENT_TIMESTAMP"]
+
+  indexes {
+    resident_id [name: "idx_requests_resident"]
+    service_type_id [name: "idx_requests_service_type"]
+    (status, request_date) [name: "idx_requests_status_date"]
+    created_by_user_id [name: "idx_requests_created_by"]
+    processed_by_user_id [name: "idx_requests_processed_by"]
+  }
+}
+
+Table request_status_history {
+  history_id "bigint unsigned" [pk, increment, not null]
+  request_id "bigint unsigned" [not null]
+  old_status request_status_enum
+  new_status request_status_enum [not null]
+  remarks varchar(1000)
+  changed_by_user_id "int unsigned" [not null]
+  changed_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (request_id, changed_at) [name: "idx_history_request_date"]
+    changed_by_user_id [name: "idx_history_changed_by"]
+  }
+}
+
+Table activity_logs {
+  activity_log_id "bigint unsigned" [pk, increment, not null]
+  user_id "int unsigned"
+  action varchar(50) [not null]
+  entity_type varchar(50) [not null]
+  entity_id "bigint unsigned" [note: "Polymorphic application reference; intentionally not a foreign key"]
+  description varchar(1000)
+  created_at timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  indexes {
+    (user_id, created_at) [name: "idx_activity_user_date"]
+    (entity_type, entity_id) [name: "idx_activity_entity"]
+    (action, created_at) [name: "idx_activity_action_date"]
+  }
+}
+
+Ref contains {
+  households.household_id < residents.household_id [update: cascade, delete: set null]
+}
+
+Ref has {
+  residents.resident_id - users.resident_id [update: cascade, delete: restrict]
+}
+
+Ref submits {
+  residents.resident_id < service_requests.resident_id [update: cascade, delete: restrict]
+}
+
+Ref classifies {
+  service_types.service_type_id < service_requests.service_type_id [update: cascade, delete: restrict]
+}
+
+Ref creates {
+  users.user_id < service_requests.created_by_user_id [update: cascade, delete: restrict]
+}
+
+Ref processes {
+  users.user_id < service_requests.processed_by_user_id [update: cascade, delete: set null]
+}
+
+Ref records {
+  service_requests.request_id < request_status_history.request_id [update: cascade, delete: cascade]
+}
+
+Ref changes_status {
+  users.user_id < request_status_history.changed_by_user_id [update: cascade, delete: restrict]
+}
+
+Ref performs {
+  users.user_id < activity_logs.user_id [update: cascade, delete: set null]
+}
+
+TableGroup ResidentManagement {
+  households
+  residents
+  users
+}
+
+TableGroup ServiceRequests {
+  service_types
+  service_requests
+  request_status_history
+}
+
+TableGroup Auditing {
+  activity_logs
+}
