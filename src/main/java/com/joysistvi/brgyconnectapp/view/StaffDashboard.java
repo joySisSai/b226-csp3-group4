@@ -14,29 +14,41 @@ public class StaffDashboard {
     public void show(User user) {
         String choice;
         do {
+            ConsoleUI.clearScreen();
             printHeader(user);
-            System.out.println("1. Manage resident records");
-            System.out.println("2. Manage household records");
-            System.out.println("3. Search records");
-            System.out.println("4. Create service request");
-            System.out.println("5. Update request status");
-            System.out.println("6. View request history");
-            System.out.println("7. Generate reports");
-            System.out.println("0. Log out");
-            System.out.print("Choose an option: ");
+            ConsoleUI.printSubHeader("Staff Operations");
+            ConsoleUI.printMenuOption("1", "Manage resident records");
+            ConsoleUI.printMenuOption("2", "Manage household records");
+            ConsoleUI.printMenuOption("3", "Search records");
+            ConsoleUI.printMenuOption("4", "Create service request");
+            ConsoleUI.printMenuOption("5", "Update request status");
+            ConsoleUI.printMenuOption("6", "View request history");
+            ConsoleUI.printMenuOption("7", "Generate reports");
+            ConsoleUI.printMenuOption("0", "Log out");
+            System.out.println();
+            ConsoleUI.printPrompt("Choose an option: ");
             choice = scanner.nextLine().trim();
 
             if (!choice.equals("0")) {
-                System.out.println("This feature is not implemented yet.");
+                System.out.println();
+                ConsoleUI.printInfo("This feature is not implemented yet.");
+                System.out.println();
+                ConsoleUI.printPrompt("Press Enter to continue...");
+                scanner.nextLine();
             }
         } while (!choice.equals("0"));
 
-        System.out.println("Logged out successfully.");
+        System.out.println();
+        ConsoleUI.printSuccess("Logged out successfully.");
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException ignored) {
+        }
     }
 
     private void printHeader(User user) {
+        ConsoleUI.printHeader("Staff Dashboard");
+        System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
-        System.out.println("=== Staff Dashboard ===");
-        System.out.println("Welcome, " + user.getDisplayName() + "!");
     }
 }

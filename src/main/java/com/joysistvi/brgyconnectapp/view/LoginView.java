@@ -9,22 +9,34 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Scanner;
 
+import static com.joysistvi.brgyconnectapp.view.ConsoleUI.printMainBanner;
+
 public class LoginView {
     private final AuthController authController;
     private final Scanner scanner;
+    public static final String RESET = "\u001B[0m";
+    public static final String BOLD = "\u001B[1m";
+    public static final String CYAN = "\u001B[36m";
+    public static final String MAGENTA = "\u001B[35m";
+    public static final String YELLOW = "\u001B[33m";
+    public static final String BG_MAROON = "\u001B[48;5;52m";
+    public static final String WHITE = "\u001B[97m";
 
     public LoginView(AuthController authController, Scanner scanner) {
         this.authController = authController;
         this.scanner = scanner;
     }
 
+
     public Optional<User> show() {
         while (true) {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printMainBanner();
             System.out.println();
-            System.out.println("=== Barangay Connect ===");
-            System.out.println("1. Log in");
-            System.out.println("0. Exit");
-            System.out.print("Choose an option: ");
+            ConsoleUI.printMenuOption("1", "Log in");
+            ConsoleUI.printMenuOption("0", "Exit");
+            System.out.println();
+            ConsoleUI.printPrompt("Choose an option: ");
 
             String choice = scanner.nextLine().trim();
             switch (choice) {
@@ -32,24 +44,38 @@ public class LoginView {
                     Optional<User> authenticatedUser = attemptLogin();
                     if (authenticatedUser.isPresent()) {
                         return authenticatedUser;
+                    } else {
+                        System.out.println();
+                        ConsoleUI.printPrompt("Press Enter to try again...");
+                        scanner.nextLine();
                     }
                 }
                 case "0" -> {
                     return Optional.empty();
                 }
-                default -> System.out.println("Please enter 1 or 0.");
+                default -> {
+                    ConsoleUI.printError("Please enter 1 or 0.");
+                    System.out.println();
+                    ConsoleUI.printPrompt("Press Enter to continue...");
+                    scanner.nextLine();
+                }
             }
         }
     }
 
     private Optional<User> attemptLogin() {
-        System.out.print("Username: ");
+        System.out.println();
+        ConsoleUI.printPrompt("Username: ");
         String username = scanner.nextLine();
         char[] password = readPassword();
 
         try {
             LoginResult result = authController.login(username, password);
-            System.out.println(result.message());
+            if (result.user() != null) {
+                ConsoleUI.printSuccess(result.message());
+            } else {
+                ConsoleUI.printError(result.message());
+            }
             return Optional.ofNullable(result.user());
         } finally {
             Arrays.fill(password, '\0');
@@ -59,11 +85,11 @@ public class LoginView {
     private char[] readPassword() {
         Console console = System.console();
         if (console != null) {
-            char[] password = console.readPassword("Password: ");
+            char[] password = console.readPassword(ConsoleUI.CYAN + ConsoleUI.BOLD + " » " + ConsoleUI.RESET + "Password: ");
             return password == null ? new char[0] : password;
         }
 
-        System.out.print("Password: ");
+        ConsoleUI.printPrompt("Password: ");
         return scanner.nextLine().toCharArray();
     }
 }
