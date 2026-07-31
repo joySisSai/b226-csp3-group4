@@ -7,11 +7,7 @@ import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
 import com.joysistvi.brgyconnectapp.service.AuthService;
-import com.joysistvi.brgyconnectapp.view.AdminDashboard;
-import com.joysistvi.brgyconnectapp.view.DashboardRouter;
-import com.joysistvi.brgyconnectapp.view.LoginView;
-import com.joysistvi.brgyconnectapp.view.ResidentDashboard;
-import com.joysistvi.brgyconnectapp.view.StaffDashboard;
+import com.joysistvi.brgyconnectapp.view.*;
 
 import java.util.Optional;
 import java.util.Scanner;
@@ -34,6 +30,7 @@ public class BarangayConnectApplication {
         while (true) {
             Optional<User> authenticatedUser = loginView.show();
             if (authenticatedUser.isEmpty()) {
+                ConsoleUI.resetTerminal();
                 System.out.println("Goodbye.");
                 break;
             }
