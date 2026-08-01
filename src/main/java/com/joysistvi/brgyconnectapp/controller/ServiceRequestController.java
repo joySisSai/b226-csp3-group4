@@ -24,20 +24,20 @@ public class ServiceRequestController {
         this.activityLogService = activityLogService;
     }
 
-    public List<ServiceRequest> search(String keyword) {
-        return requestService.searchRequests(keyword);
+    public List<ServiceRequest> search(String keyword, int actingUserId) {
+        return requestService.searchRequests(keyword, actingUserId);
     }
 
-    public ServiceRequest getById(long requestId) {
-        return requestService.getRequestById(requestId);
+    public ServiceRequest getById(long requestId, int actingUserId) {
+        return requestService.getRequestById(requestId, actingUserId);
     }
 
-    public List<RequestStatusHistory> getHistory(long requestId) {
-        return requestService.getStatusHistory(requestId);
+    public List<RequestStatusHistory> getHistory(long requestId, int actingUserId) {
+        return requestService.getStatusHistory(requestId, actingUserId);
     }
 
-    public List<ServiceType> getActiveServiceTypes() {
-        return requestService.getActiveServiceTypes();
+    public List<ServiceType> getActiveServiceTypes(int actingUserId) {
+        return requestService.getActiveServiceTypes(actingUserId);
     }
 
     public String create(ServiceRequest request) {
@@ -58,7 +58,7 @@ public class ServiceRequestController {
                                RequestStatus newStatus,
                                String remarks,
                                int changedByUserId) {
-        ServiceRequest existing = requestService.getRequestById(requestId);
+        ServiceRequest existing = requestService.getRequestById(requestId, changedByUserId);
         String result = requestService.updateStatus(requestId, newStatus, remarks, changedByUserId);
         if ("Request status updated successfully".equals(result) && activityLogService != null) {
             String requestLabel = existing == null || existing.getRequestNumber() == null

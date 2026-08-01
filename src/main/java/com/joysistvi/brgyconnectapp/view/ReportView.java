@@ -5,6 +5,7 @@ import com.joysistvi.brgyconnectapp.model.HouseholdReportRow;
 import com.joysistvi.brgyconnectapp.model.RequestStatus;
 import com.joysistvi.brgyconnectapp.model.ResidentReportRow;
 import com.joysistvi.brgyconnectapp.model.ServiceRequestReportRow;
+import com.joysistvi.brgyconnectapp.model.User;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -21,7 +22,7 @@ public class ReportView {
         this.reportController = reportController;
     }
 
-    public void show() {
+    public void show(User actingUser) {
         String choice;
         do {
             ConsoleUI.clearScreen();
@@ -36,10 +37,10 @@ public class ReportView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> showResidentSummary(false);
-                case "2" -> showResidentSummary(true);
-                case "3" -> showHouseholdSummary();
-                case "4" -> showServiceRequestSummary();
+                case "1" -> showResidentSummary(false, actingUser);
+                case "2" -> showResidentSummary(true, actingUser);
+                case "3" -> showHouseholdSummary(actingUser);
+                case "4" -> showServiceRequestSummary(actingUser);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -50,11 +51,11 @@ public class ReportView {
         } while (!choice.equals("0"));
     }
 
-    private void showResidentSummary(boolean votersOnly) {
+    private void showResidentSummary(boolean votersOnly, User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader(votersOnly ? "Registered Voter Summary" : "Resident Summary");
         String purok = promptOptionalFilter("Purok (leave blank for all): ");
-        List<ResidentReportRow> rows = reportController.getResidentSummary(purok);
+        List<ResidentReportRow> rows = reportController.getResidentSummary(purok, userId(actingUser));
         if (rows.isEmpty()) {
             ConsoleUI.printInfo("No resident data matched the selected filter.");
             return;
@@ -67,11 +68,12 @@ public class ReportView {
         }
     }
 
-    private void showHouseholdSummary() {
+    private void showHouseholdSummary(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Household Summary");
         String purok = promptOptionalFilter("Purok (leave blank for all): ");
-        List<HouseholdReportRow> rows = reportController.getHouseholdSummary(purok);
+        List<HouseholdReportRow> rows = reportController.getHouseholdSummary(
+                purok, userId(actingUser));
         if (rows.isEmpty()) {
             ConsoleUI.printInfo("No household data matched the selected filter.");
             return;
@@ -100,7 +102,7 @@ public class ReportView {
         System.out.printf("%-20s %10d %10d %10d %10d%n", "TOTAL", total, active, inactive, members);
     }
 
-    private void showServiceRequestSummary() {
+    private void showServiceRequestSummary(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Service Request Summary");
         LocalDate today = LocalDate.now();
@@ -115,7 +117,8 @@ public class ReportView {
         List<ServiceRequestReportRow> rows = reportController.getServiceRequestSummary(
                 startDate,
                 endDate,
-                status
+                status,
+                userId(actingUser)
         );
         if (rows.isEmpty()) {
             ConsoleUI.printInfo("No service-request data matched the selected filter.");
@@ -259,6 +262,10 @@ public class ReportView {
 
     private double percentage(long part, long whole) {
         return whole == 0 ? 0.0 : (part * 100.0) / whole;
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private String formatEnum(Enum<?> value) {

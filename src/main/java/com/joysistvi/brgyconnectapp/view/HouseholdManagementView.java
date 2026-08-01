@@ -38,9 +38,9 @@ public class HouseholdManagementView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> listHouseholds();
-                case "2" -> searchHouseholds();
-                case "3" -> viewHousehold();
+                case "1" -> listHouseholds(actingUser);
+                case "2" -> searchHouseholds(actingUser);
+                case "3" -> viewHousehold(actingUser);
                 case "4" -> createHousehold(actingUser);
                 case "5" -> updateHousehold(actingUser);
                 case "6" -> addMember(actingUser);
@@ -57,13 +57,13 @@ public class HouseholdManagementView {
         } while (!choice.equals("0"));
     }
 
-    private void listHouseholds() {
+    private void listHouseholds(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Household Records");
-        printHouseholds(householdController.getAllHouseholds());
+        printHouseholds(householdController.getAllHouseholds(userId(actingUser)));
     }
 
-    private void searchHouseholds() {
+    private void searchHouseholds(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Search Households");
         ConsoleUI.printPrompt("Code, address, or purok: ");
@@ -72,14 +72,14 @@ public class HouseholdManagementView {
             ConsoleUI.printError("A search keyword is required.");
             return;
         }
-        printHouseholds(householdController.search(keyword));
+        printHouseholds(householdController.search(keyword, userId(actingUser)));
     }
 
-    private void viewHousehold() {
+    private void viewHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Household Details");
         int householdId = promptPositiveInteger("Household ID: ");
-        Household household = householdController.getById(householdId);
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return;
@@ -88,7 +88,7 @@ public class HouseholdManagementView {
         printHouseholdDetails(household);
         System.out.println();
         ConsoleUI.printSubHeader("Household Members");
-        printMembers(householdController.getMembers(householdId));
+        printMembers(householdController.getMembers(householdId, userId(actingUser)));
     }
 
     private void createHousehold(User actingUser) {
@@ -107,7 +107,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Household");
         int householdId = promptPositiveInteger("Household ID: ");
-        Household household = householdController.getById(householdId);
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return;
@@ -124,7 +124,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Add Household Member");
         int householdId = promptPositiveInteger("Household ID: ");
-        if (!showSelectedHousehold(householdId)) {
+        if (!showSelectedHousehold(householdId, actingUser)) {
             return;
         }
         int residentId = promptPositiveInteger("Resident ID: ");
@@ -135,7 +135,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Remove Household Member");
         int householdId = promptPositiveInteger("Household ID: ");
-        Household household = householdController.getById(householdId);
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return;
@@ -143,7 +143,7 @@ public class HouseholdManagementView {
 
         printHouseholdDetails(household);
         System.out.println();
-        printMembers(householdController.getMembers(householdId));
+        printMembers(householdController.getMembers(householdId, userId(actingUser)));
         int residentId = promptPositiveInteger("Resident ID to remove: ");
         if (!promptYesNo("Confirm removal? (Y/N): ")) {
             ConsoleUI.printInfo("Member removal cancelled.");
@@ -156,7 +156,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Assign Household Head");
         int householdId = promptPositiveInteger("Household ID: ");
-        Household household = householdController.getById(householdId);
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return;
@@ -164,7 +164,7 @@ public class HouseholdManagementView {
 
         printHouseholdDetails(household);
         System.out.println();
-        List<Resident> members = householdController.getMembers(householdId);
+        List<Resident> members = householdController.getMembers(householdId, userId(actingUser));
         printMembers(members);
         if (members.isEmpty()) {
             return;
@@ -183,7 +183,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Deactivate Household");
         int householdId = promptPositiveInteger("Household ID: ");
-        Household household = householdController.getById(householdId);
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return;
@@ -205,8 +205,8 @@ public class HouseholdManagementView {
         return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
-    private boolean showSelectedHousehold(int householdId) {
-        Household household = householdController.getById(householdId);
+    private boolean showSelectedHousehold(int householdId, User actingUser) {
+        Household household = householdController.getById(householdId, userId(actingUser));
         if (household == null) {
             ConsoleUI.printError("Household record not found.");
             return false;

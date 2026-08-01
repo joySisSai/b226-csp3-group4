@@ -33,8 +33,8 @@ public class ServiceTypeManagementView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> listServiceTypes();
-                case "2" -> viewServiceType();
+                case "1" -> listServiceTypes(actingAdmin);
+                case "2" -> viewServiceType(actingAdmin);
                 case "3" -> createServiceType(actingAdmin);
                 case "4" -> updateServiceType(actingAdmin);
                 case "5" -> changeServiceTypeStatus(actingAdmin);
@@ -48,17 +48,17 @@ public class ServiceTypeManagementView {
         } while (!choice.equals("0"));
     }
 
-    private void listServiceTypes() {
+    private void listServiceTypes(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Service Types");
-        printServiceTypes(serviceTypeController.getAll());
+        printServiceTypes(serviceTypeController.getAll(userId(actingAdmin)));
     }
 
-    private void viewServiceType() {
+    private void viewServiceType(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Service Type Details");
         int serviceTypeId = promptPositiveInteger("Service type ID: ");
-        ServiceType serviceType = serviceTypeController.getById(serviceTypeId);
+        ServiceType serviceType = serviceTypeController.getById(serviceTypeId, userId(actingAdmin));
         if (serviceType == null) {
             ConsoleUI.printError("Service type not found.");
             return;
@@ -87,7 +87,7 @@ public class ServiceTypeManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Service Type");
         int serviceTypeId = promptPositiveInteger("Service type ID: ");
-        ServiceType serviceType = serviceTypeController.getById(serviceTypeId);
+        ServiceType serviceType = serviceTypeController.getById(serviceTypeId, userId(actingAdmin));
         if (serviceType == null) {
             ConsoleUI.printError("Service type not found.");
             return;
@@ -115,7 +115,7 @@ public class ServiceTypeManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Service Type Status");
         int serviceTypeId = promptPositiveInteger("Service type ID: ");
-        ServiceType serviceType = serviceTypeController.getById(serviceTypeId);
+        ServiceType serviceType = serviceTypeController.getById(serviceTypeId, userId(actingAdmin));
         if (serviceType == null) {
             ConsoleUI.printError("Service type not found.");
             return;

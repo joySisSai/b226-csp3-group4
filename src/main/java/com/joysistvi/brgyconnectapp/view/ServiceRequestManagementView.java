@@ -19,13 +19,13 @@ public class ServiceRequestManagementView {
         this.requestController = requestController;
     }
 
-    public void searchRequests() {
+    public void searchRequests(User user) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Search Service Requests");
         ConsoleUI.printInfo("Leave the search blank to show the 100 most recent requests.");
         ConsoleUI.printPrompt("Request number, resident code, or resident name: ");
         String keyword = scanner.nextLine().trim();
-        printRequests(requestController.search(keyword));
+        printRequests(requestController.search(keyword, userId(user)));
         pause();
     }
 
@@ -33,7 +33,7 @@ public class ServiceRequestManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Service Request");
 
-        List<ServiceType> serviceTypes = requestController.getActiveServiceTypes();
+        List<ServiceType> serviceTypes = requestController.getActiveServiceTypes(userId(user));
         if (serviceTypes.isEmpty()) {
             ConsoleUI.printError("No active service types are available.");
             pause();
@@ -79,7 +79,7 @@ public class ServiceRequestManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Request Status");
         long requestId = promptPositiveLong("Request ID: ");
-        ServiceRequest request = requestController.getById(requestId);
+        ServiceRequest request = requestController.getById(requestId, userId(user));
         if (request == null) {
             ConsoleUI.printError("Service request not found.");
             pause();
@@ -130,11 +130,11 @@ public class ServiceRequestManagementView {
         pause();
     }
 
-    public void viewRequestHistory() {
+    public void viewRequestHistory(User user) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Request Status History");
         long requestId = promptPositiveLong("Request ID: ");
-        ServiceRequest request = requestController.getById(requestId);
+        ServiceRequest request = requestController.getById(requestId, userId(user));
         if (request == null) {
             ConsoleUI.printError("Service request not found.");
             pause();
@@ -143,8 +143,12 @@ public class ServiceRequestManagementView {
 
         printRequestDetails(request);
         System.out.println();
-        printHistory(requestController.getHistory(requestId));
+        printHistory(requestController.getHistory(requestId, userId(user)));
         pause();
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private void printRequests(List<ServiceRequest> requests) {

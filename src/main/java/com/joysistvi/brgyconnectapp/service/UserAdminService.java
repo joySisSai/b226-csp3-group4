@@ -23,13 +23,20 @@ public class UserAdminService {
 
     private final UserRepo userRepo;
     private final ResidentRepo residentRepo;
+    private final AuthorizationService authorizationService;
 
-    public UserAdminService(UserRepo userRepo, ResidentRepo residentRepo) {
+    public UserAdminService(UserRepo userRepo,
+                            ResidentRepo residentRepo,
+                            AuthorizationService authorizationService) {
         this.userRepo = userRepo;
         this.residentRepo = residentRepo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<User> getAllUsers() {
+    public List<User> getAllUsers(int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return List.of();
+        }
         try {
             return userRepo.getAll();
         } catch (SQLException exception) {
@@ -37,9 +44,12 @@ public class UserAdminService {
         }
     }
 
-    public List<User> searchUsers(String keyword) {
+    public List<User> searchUsers(String keyword, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return List.of();
+        }
         if (keyword == null || keyword.isBlank()) {
-            return getAllUsers();
+            return getAllUsers(actingAdminId);
         }
         try {
             return userRepo.search(keyword.trim(), MAXIMUM_RESULTS);
@@ -48,7 +58,10 @@ public class UserAdminService {
         }
     }
 
-    public User getUserById(int userId) {
+    public User getUserById(int userId, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return null;
+        }
         if (userId <= 0) {
             return null;
         }
@@ -59,7 +72,11 @@ public class UserAdminService {
         }
     }
 
-    public String createUser(User user, char[] password) {
+    public String createUser(User user, char[] password, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            clearPassword(password);
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         try {
             String validationError = validateNewUser(user, password);
             if (validationError != null) {
@@ -100,6 +117,9 @@ public class UserAdminService {
     }
 
     public String changeRole(int targetUserId, UserRole newRole, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         if (targetUserId <= 0 || newRole == null) {
             return "A valid user and role are required";
         }
@@ -131,6 +151,9 @@ public class UserAdminService {
     }
 
     public String changeStatus(int targetUserId, AccountStatus newStatus, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         if (targetUserId <= 0 || newStatus == null || newStatus == AccountStatus.LOCKED) {
             return "Choose a valid account status";
         }
@@ -158,7 +181,10 @@ public class UserAdminService {
         }
     }
 
-    public String unlockUser(int targetUserId) {
+    public String unlockUser(int targetUserId, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         if (targetUserId <= 0) {
             return "Invalid user ID";
         }
@@ -178,7 +204,11 @@ public class UserAdminService {
         }
     }
 
-    public String resetPassword(int targetUserId, char[] newPassword) {
+    public String resetPassword(int targetUserId, char[] newPassword, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            clearPassword(newPassword);
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         try {
             if (targetUserId <= 0) {
                 return "Invalid user ID";
@@ -240,5 +270,9 @@ public class UserAdminService {
         if (password != null) {
             Arrays.fill(password, '\0');
         }
+    }
+
+    public boolean canManage(int actingAdminId) {
+        return authorizationService.canAccessAdminOperations(actingAdminId);
     }
 }

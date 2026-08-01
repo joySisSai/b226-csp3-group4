@@ -16,17 +16,18 @@ public class ReportController {
         this.reportService = reportService;
     }
 
-    public List<ResidentReportRow> getResidentSummary(String purok) {
-        return reportService.getResidentSummary(purok);
+    public List<ResidentReportRow> getResidentSummary(String purok, int actingUserId) {
+        return reportService.getResidentSummary(purok, actingUserId);
     }
 
-    public List<HouseholdReportRow> getHouseholdSummary(String purok) {
-        return reportService.getHouseholdSummary(purok);
+    public List<HouseholdReportRow> getHouseholdSummary(String purok, int actingUserId) {
+        return reportService.getHouseholdSummary(purok, actingUserId);
     }
 
     public List<ServiceRequestReportRow> getServiceRequestSummary(LocalDate startDate,
                                                                   LocalDate endDate,
-                                                                  RequestStatus status) {
-        return reportService.getServiceRequestSummary(startDate, endDate, status);
+                                                                  RequestStatus status,
+                                                                  int actingUserId) {
+        return reportService.getServiceRequestSummary(startDate, endDate, status, actingUserId);
     }
 }

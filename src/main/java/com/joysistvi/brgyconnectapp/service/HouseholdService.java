@@ -15,13 +15,20 @@ public class HouseholdService {
 
     private final HouseholdRepo householdRepo;
     private final ResidentRepo residentRepo;
+    private final AuthorizationService authorizationService;
 
-    public HouseholdService(HouseholdRepo householdRepo, ResidentRepo residentRepo) {
+    public HouseholdService(HouseholdRepo householdRepo,
+                            ResidentRepo residentRepo,
+                            AuthorizationService authorizationService) {
         this.householdRepo = householdRepo;
         this.residentRepo = residentRepo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<Household> getAllHouseholds() {
+    public List<Household> getAllHouseholds(int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         try {
             return householdRepo.getAll();
         } catch (SQLException exception) {
@@ -29,7 +36,10 @@ public class HouseholdService {
         }
     }
 
-    public Household getHouseholdById(int householdId) {
+    public Household getHouseholdById(int householdId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return null;
+        }
         if (householdId <= 0) {
             return null;
         }
@@ -40,7 +50,10 @@ public class HouseholdService {
         }
     }
 
-    public List<Household> searchHouseholds(String keyword) {
+    public List<Household> searchHouseholds(String keyword, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         if (keyword == null || keyword.isBlank()) {
             return List.of();
         }
@@ -51,7 +64,10 @@ public class HouseholdService {
         }
     }
 
-    public List<Resident> getMembers(int householdId) {
+    public List<Resident> getMembers(int householdId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         if (householdId <= 0) {
             return List.of();
         }
@@ -62,7 +78,10 @@ public class HouseholdService {
         }
     }
 
-    public String createHousehold(Household household) {
+    public String createHousehold(Household household, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         String validationError = validateHousehold(household, false);
         if (validationError != null) {
             return validationError;
@@ -81,7 +100,10 @@ public class HouseholdService {
         }
     }
 
-    public String updateHousehold(Household household) {
+    public String updateHousehold(Household household, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         String validationError = validateHousehold(household, true);
         if (validationError != null) {
             return validationError;
@@ -99,7 +121,10 @@ public class HouseholdService {
         }
     }
 
-    public String addMember(int householdId, int residentId) {
+    public String addMember(int householdId, int residentId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         try {
             Household household = householdRepo.getById(householdId).orElse(null);
             if (household == null) {
@@ -131,7 +156,10 @@ public class HouseholdService {
         }
     }
 
-    public String removeMember(int householdId, int residentId) {
+    public String removeMember(int householdId, int residentId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         try {
             if (householdRepo.getById(householdId).isEmpty()) {
                 return "Household record not found";
@@ -150,7 +178,10 @@ public class HouseholdService {
         }
     }
 
-    public String assignHouseholdHead(int householdId, int residentId) {
+    public String assignHouseholdHead(int householdId, int residentId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         try {
             Household household = householdRepo.getById(householdId).orElse(null);
             if (household == null) {
@@ -177,7 +208,10 @@ public class HouseholdService {
         }
     }
 
-    public String deactivateHousehold(int householdId) {
+    public String deactivateHousehold(int householdId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         try {
             Household household = householdRepo.getById(householdId).orElse(null);
             if (household == null) {
@@ -218,5 +252,9 @@ public class HouseholdService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private boolean canManage(int actingUserId) {
+        return authorizationService.canAccessStaffOperations(actingUserId);
     }
 }

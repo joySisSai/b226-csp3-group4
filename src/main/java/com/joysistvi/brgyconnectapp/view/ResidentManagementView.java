@@ -38,9 +38,9 @@ public class ResidentManagementView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> listResidents();
-                case "2" -> searchResidents();
-                case "3" -> viewResident();
+                case "1" -> listResidents(actingUser);
+                case "2" -> searchResidents(actingUser);
+                case "3" -> viewResident(actingUser);
                 case "4" -> registerResident(actingUser);
                 case "5" -> updateResident(actingUser);
                 case "6" -> deactivateResident(actingUser);
@@ -54,13 +54,13 @@ public class ResidentManagementView {
         } while (!choice.equals("0"));
     }
 
-    private void listResidents() {
+    private void listResidents(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Resident Records");
-        printResidents(residentController.getAllResidents());
+        printResidents(residentController.getAllResidents(userId(actingUser)));
     }
 
-    private void searchResidents() {
+    private void searchResidents(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Search Residents");
         ConsoleUI.printPrompt("Name or resident code: ");
@@ -71,14 +71,14 @@ public class ResidentManagementView {
             return;
         }
 
-        printResidents(residentController.searchResidents(keyword));
+        printResidents(residentController.searchResidents(keyword, userId(actingUser)));
     }
 
-    private void viewResident() {
+    private void viewResident(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Resident Details");
         Integer residentId = promptPositiveInteger("Resident ID: ", false);
-        Resident resident = residentController.getById(residentId);
+        Resident resident = residentController.getById(residentId, userId(actingUser));
 
         if (resident == null) {
             ConsoleUI.printError("Resident record not found.");
@@ -117,7 +117,7 @@ public class ResidentManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Resident");
         Integer residentId = promptPositiveInteger("Resident ID: ", false);
-        Resident resident = residentController.getById(residentId);
+        Resident resident = residentController.getById(residentId, userId(actingUser));
 
         if (resident == null) {
             ConsoleUI.printError("Resident record not found.");
@@ -156,7 +156,7 @@ public class ResidentManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Deactivate Resident");
         Integer residentId = promptPositiveInteger("Resident ID: ", false);
-        Resident resident = residentController.getById(residentId);
+        Resident resident = residentController.getById(residentId, userId(actingUser));
 
         if (resident == null) {
             ConsoleUI.printError("Resident record not found.");

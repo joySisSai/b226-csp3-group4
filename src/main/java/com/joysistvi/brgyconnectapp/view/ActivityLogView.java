@@ -2,6 +2,7 @@ package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.controller.ActivityLogController;
 import com.joysistvi.brgyconnectapp.model.ActivityLog;
+import com.joysistvi.brgyconnectapp.model.User;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +22,7 @@ public class ActivityLogView {
         this.activityLogController = activityLogController;
     }
 
-    public void show() {
+    public void show(User actingAdmin) {
         String choice;
         do {
             ConsoleUI.clearScreen();
@@ -35,9 +36,10 @@ public class ActivityLogView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> printLogs(activityLogController.search(null, null, null, null, null));
-                case "2" -> filterLogs();
-                case "3" -> viewDetails();
+                case "1" -> printLogs(activityLogController.search(
+                        userId(actingAdmin), null, null, null, null, null));
+                case "2" -> filterLogs(actingAdmin);
+                case "3" -> viewDetails(actingAdmin);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -48,7 +50,7 @@ public class ActivityLogView {
         } while (!choice.equals("0"));
     }
 
-    private void filterLogs() {
+    private void filterLogs(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Filter Activity Log");
         ConsoleUI.printInfo("Leave any filter blank to include all values.");
@@ -61,7 +63,8 @@ public class ActivityLogView {
             ConsoleUI.printError("Start date cannot be after end date.");
             return;
         }
-        printLogs(activityLogController.search(userId, action, entityType, dateFrom, dateTo));
+        printLogs(activityLogController.search(
+                userId(actingAdmin), userId, action, entityType, dateFrom, dateTo));
     }
 
     private void printLogs(List<ActivityLog> logs) {
@@ -89,11 +92,11 @@ public class ActivityLogView {
         ConsoleUI.printInfo(logs.size() + " record(s) found; newest entries are shown first.");
     }
 
-    private void viewDetails() {
+    private void viewDetails(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Activity Log Details");
         long activityLogId = promptPositiveLong("Activity log ID: ");
-        ActivityLog log = activityLogController.getById(activityLogId);
+        ActivityLog log = activityLogController.getById(activityLogId, userId(actingAdmin));
         if (log == null) {
             ConsoleUI.printError("Activity log entry not found.");
             return;
@@ -116,6 +119,10 @@ public class ActivityLogView {
             return log.getActorUsername();
         }
         return log.getUserId() == null ? "System" : "User " + log.getUserId();
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private Integer promptOptionalPositiveInteger(String label) {

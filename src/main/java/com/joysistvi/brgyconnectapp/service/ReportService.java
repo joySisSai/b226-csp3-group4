@@ -12,12 +12,17 @@ import java.util.List;
 
 public class ReportService {
     private final ReportRepo reportRepo;
+    private final AuthorizationService authorizationService;
 
-    public ReportService(ReportRepo reportRepo) {
+    public ReportService(ReportRepo reportRepo, AuthorizationService authorizationService) {
         this.reportRepo = reportRepo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<ResidentReportRow> getResidentSummary(String purok) {
+    public List<ResidentReportRow> getResidentSummary(String purok, int actingUserId) {
+        if (!canGenerate(actingUserId)) {
+            return List.of();
+        }
         try {
             return reportRepo.getResidentSummary(normalizeFilter(purok));
         } catch (SQLException exception) {
@@ -25,7 +30,10 @@ public class ReportService {
         }
     }
 
-    public List<HouseholdReportRow> getHouseholdSummary(String purok) {
+    public List<HouseholdReportRow> getHouseholdSummary(String purok, int actingUserId) {
+        if (!canGenerate(actingUserId)) {
+            return List.of();
+        }
         try {
             return reportRepo.getHouseholdSummary(normalizeFilter(purok));
         } catch (SQLException exception) {
@@ -35,7 +43,11 @@ public class ReportService {
 
     public List<ServiceRequestReportRow> getServiceRequestSummary(LocalDate startDate,
                                                                   LocalDate endDate,
-                                                                  RequestStatus status) {
+                                                                  RequestStatus status,
+                                                                  int actingUserId) {
+        if (!canGenerate(actingUserId)) {
+            return List.of();
+        }
         if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
             return List.of();
         }
@@ -48,5 +60,9 @@ public class ReportService {
 
     private String normalizeFilter(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    public boolean canGenerate(int actingUserId) {
+        return authorizationService.canAccessStaffOperations(actingUserId);
     }
 }

@@ -27,6 +27,7 @@ import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
 import com.joysistvi.brgyconnectapp.service.AuthService;
 import com.joysistvi.brgyconnectapp.service.ActivityLogService;
+import com.joysistvi.brgyconnectapp.service.AuthorizationService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
 import com.joysistvi.brgyconnectapp.service.ReportService;
 import com.joysistvi.brgyconnectapp.service.ResidentService;
@@ -42,20 +43,23 @@ public class BarangayConnectApplication {
     public static void main(String[] args) {
         ConnectionFactory connectionFactory = new DbConnection();
         UserRepo userRepo = new UserRepoImpl(connectionFactory);
+        AuthorizationService authorizationService = new AuthorizationService(userRepo);
         ActivityLogRepo activityLogRepo = new ActivityLogRepoImpl(connectionFactory);
-        ActivityLogService activityLogService = new ActivityLogService(activityLogRepo);
+        ActivityLogService activityLogService = new ActivityLogService(
+                activityLogRepo, authorizationService);
         AuthService authService = new AuthService(userRepo);
         AuthController authController = new AuthController(authService);
 
         Scanner scanner = new Scanner(System.in);
         LoginView loginView = new LoginView(authController, scanner);
         ResidentRepo residentRepo = new ResidentRepoImpl();
+        ResidentController residentController = new ResidentController(
+                new ResidentService(residentRepo, authorizationService), activityLogService);
         ResidentManagementView residentManagementView = new ResidentManagementView(
-                scanner,
-                new ResidentController(new ResidentService(residentRepo), activityLogService)
-        );
+                scanner, residentController);
         HouseholdRepo householdRepo = new HouseholdRepoImpl(connectionFactory);
-        HouseholdService householdService = new HouseholdService(householdRepo, residentRepo);
+        HouseholdService householdService = new HouseholdService(
+                householdRepo, residentRepo, authorizationService);
         HouseholdManagementView householdManagementView = new HouseholdManagementView(
                 scanner,
                 new HouseholdController(householdService, activityLogService)
@@ -65,7 +69,8 @@ public class BarangayConnectApplication {
         ServiceRequestService serviceRequestService = new ServiceRequestService(
                 serviceRequestRepo,
                 serviceTypeRepo,
-                residentRepo
+                residentRepo,
+                authorizationService
         );
         ServiceRequestManagementView serviceRequestManagementView = new ServiceRequestManagementView(
                 scanner,
@@ -74,17 +79,19 @@ public class BarangayConnectApplication {
         ReportRepo reportRepo = new ReportRepoImpl(connectionFactory);
         ReportView reportView = new ReportView(
                 scanner,
-                new ReportController(new ReportService(reportRepo))
+                new ReportController(new ReportService(reportRepo, authorizationService))
         );
         ServiceTypeManagementView serviceTypeManagementView = new ServiceTypeManagementView(
                 scanner,
                 new ServiceTypeAdminController(
-                        new ServiceTypeAdminService(serviceTypeRepo), activityLogService)
+                        new ServiceTypeAdminService(serviceTypeRepo, authorizationService),
+                        activityLogService)
         );
         UserManagementView userManagementView = new UserManagementView(
                 scanner,
                 new UserAdminController(
-                        new UserAdminService(userRepo, residentRepo), activityLogService)
+                        new UserAdminService(userRepo, residentRepo, authorizationService),
+                        activityLogService)
         );
         ActivityLogView activityLogView = new ActivityLogView(
                 scanner,
@@ -108,7 +115,7 @@ public class BarangayConnectApplication {
                         serviceRequestManagementView,
                         reportView
                 ),
-                new ResidentDashboard(scanner)
+                new ResidentDashboard(scanner, residentController)
         );
 
         while (true) {

@@ -10,9 +10,9 @@ public class ResidentDashboard {
     private final Scanner scanner;
     private final ResidentController residentController;
 
-    public ResidentDashboard(Scanner scanner) {
+    public ResidentDashboard(Scanner scanner, ResidentController residentController) {
         this.scanner = scanner;
-        this.residentController = new ResidentController();
+        this.residentController = residentController;
     }
 
     public void show(User user) {
@@ -68,7 +68,8 @@ public class ResidentDashboard {
             return;
         }
 
-        Resident resident = residentController.getById(residentId);
+        int actingUserId = user.getUserId() == null ? 0 : user.getUserId();
+        Resident resident = residentController.getOwnProfile(residentId, actingUserId);
 
         if (resident == null) {
             ConsoleUI.printError("Resident profile not found.");

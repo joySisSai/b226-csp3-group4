@@ -24,16 +24,22 @@ public class ServiceRequestService {
     private final ServiceRequestRepo requestRepo;
     private final ServiceTypeRepo serviceTypeRepo;
     private final ResidentRepo residentRepo;
+    private final AuthorizationService authorizationService;
 
     public ServiceRequestService(ServiceRequestRepo requestRepo,
                                  ServiceTypeRepo serviceTypeRepo,
-                                 ResidentRepo residentRepo) {
+                                 ResidentRepo residentRepo,
+                                 AuthorizationService authorizationService) {
         this.requestRepo = requestRepo;
         this.serviceTypeRepo = serviceTypeRepo;
         this.residentRepo = residentRepo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<ServiceRequest> getRecentRequests() {
+    public List<ServiceRequest> getRecentRequests(int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         try {
             return requestRepo.getRecent(MAXIMUM_RESULTS);
         } catch (SQLException exception) {
@@ -41,9 +47,12 @@ public class ServiceRequestService {
         }
     }
 
-    public List<ServiceRequest> searchRequests(String keyword) {
+    public List<ServiceRequest> searchRequests(String keyword, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         if (keyword == null || keyword.isBlank()) {
-            return getRecentRequests();
+            return getRecentRequests(actingUserId);
         }
         try {
             return requestRepo.search(keyword.trim(), MAXIMUM_RESULTS);
@@ -52,7 +61,10 @@ public class ServiceRequestService {
         }
     }
 
-    public ServiceRequest getRequestById(long requestId) {
+    public ServiceRequest getRequestById(long requestId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return null;
+        }
         if (requestId <= 0) {
             return null;
         }
@@ -63,7 +75,10 @@ public class ServiceRequestService {
         }
     }
 
-    public List<RequestStatusHistory> getStatusHistory(long requestId) {
+    public List<RequestStatusHistory> getStatusHistory(long requestId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         if (requestId <= 0) {
             return List.of();
         }
@@ -74,7 +89,10 @@ public class ServiceRequestService {
         }
     }
 
-    public List<ServiceType> getActiveServiceTypes() {
+    public List<ServiceType> getActiveServiceTypes(int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         try {
             return serviceTypeRepo.getAllActive();
         } catch (SQLException exception) {
@@ -83,6 +101,12 @@ public class ServiceRequestService {
     }
 
     public String createRequest(ServiceRequest request) {
+        int actingUserId = request == null || request.getCreatedByUserId() == null
+                ? 0
+                : request.getCreatedByUserId();
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         String validationError = validateNewRequest(request);
         if (validationError != null) {
             return validationError;
@@ -118,6 +142,9 @@ public class ServiceRequestService {
                                RequestStatus newStatus,
                                String remarks,
                                int changedByUserId) {
+        if (!canManage(changedByUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         if (requestId <= 0) {
             return "Invalid request ID";
         }
@@ -210,5 +237,9 @@ public class ServiceRequestService {
 
     private String blankToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private boolean canManage(int actingUserId) {
+        return authorizationService.canAccessStaffOperations(actingUserId);
     }
 }

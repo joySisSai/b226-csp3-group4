@@ -9,21 +9,42 @@ import java.util.List;
 
 public class ResidentService {
     private final ResidentRepo repo;
+    private final AuthorizationService authorizationService;
 
     public ResidentService() {
-        this(new ResidentRepoImpl());
+        this.repo = new ResidentRepoImpl();
+        this.authorizationService = null;
     }
 
-    public ResidentService(ResidentRepo repo) {
+    public ResidentService(ResidentRepo repo, AuthorizationService authorizationService) {
         this.repo = repo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<Resident> getAllResidents() { return repo.getAll(); }
-    public Resident getResidentById(int id) { return repo.getById(id).orElse(null); }
-    public List<Resident> getAllActive() { return repo.getAllActive();}
+    public List<Resident> getAllResidents(int actingUserId) {
+        return canManage(actingUserId) ? repo.getAll() : List.of();
+    }
+
+    public Resident getResidentById(int id, int actingUserId) {
+        return canManage(actingUserId) ? repo.getById(id).orElse(null) : null;
+    }
+
+    public Resident getOwnResidentProfile(int residentId, int actingUserId) {
+        return authorizationService != null &&
+                authorizationService.canViewOwnResidentProfile(actingUserId, residentId)
+                ? repo.getById(residentId).orElse(null)
+                : null;
+    }
+
+    public List<Resident> getAllActive(int actingUserId) {
+        return canManage(actingUserId) ? repo.getAllActive() : List.of();
+    }
 
     // Add resident — checks for required fields and duplicate codes
-    public String addResident(Resident resident) {
+    public String addResident(Resident resident, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         String validationError = validateResident(resident);
         if (validationError != null) {
             return validationError;
@@ -38,7 +59,10 @@ public class ResidentService {
                 : "Failed to add resident";
     }
 
-    public List<Resident> searchResidents(String keyword) {
+    public List<Resident> searchResidents(String keyword, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
         if (keyword == null || keyword.isBlank()) {
             return List.of();
         }
@@ -47,7 +71,10 @@ public class ResidentService {
     }
 
     // Update resident — validates that the ID is valid
-    public String updateResident(Resident resident) {
+    public String updateResident(Resident resident, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         if (resident == null || resident.getResidentId() == null || resident.getResidentId() <= 0) {
             return "Invalid resident ID";
         }
@@ -58,7 +85,10 @@ public class ResidentService {
         return repo.update(resident) ? "Resident updated successfully" : "Failed to update resident";
     }
     // Deactivate resident - soft delete
-    public String deactivateResident(int id) {
+    public String deactivateResident(int id, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
         if (id <= 0) return "Invalid resident ID";
         return repo.deactivate(id) ? "Resident marked as inactive" : "Failed to update status";
     }
@@ -89,5 +119,10 @@ public class ResidentService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    private boolean canManage(int actingUserId) {
+        return authorizationService != null &&
+                authorizationService.canAccessStaffOperations(actingUserId);
     }
 }

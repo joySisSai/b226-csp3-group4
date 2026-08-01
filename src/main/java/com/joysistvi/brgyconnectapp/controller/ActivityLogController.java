@@ -13,15 +13,16 @@ public class ActivityLogController {
         this.activityLogService = activityLogService;
     }
 
-    public List<ActivityLog> search(Integer userId,
+    public List<ActivityLog> search(int actingAdminId,
+                                    Integer userId,
                                     String action,
                                     String entityType,
                                     LocalDate dateFrom,
                                     LocalDate dateTo) {
-        return activityLogService.search(userId, action, entityType, dateFrom, dateTo);
+        return activityLogService.search(actingAdminId, userId, action, entityType, dateFrom, dateTo);
     }
 
-    public ActivityLog getById(long activityLogId) {
-        return activityLogService.getById(activityLogId);
+    public ActivityLog getById(long activityLogId, int actingAdminId) {
+        return activityLogService.getById(activityLogId, actingAdminId);
     }
 }

@@ -23,16 +23,16 @@ public class UserAdminController {
         this.activityLogService = activityLogService;
     }
 
-    public List<User> search(String keyword) {
-        return userAdminService.searchUsers(keyword);
+    public List<User> search(String keyword, int actingAdminId) {
+        return userAdminService.searchUsers(keyword, actingAdminId);
     }
 
-    public User getById(int userId) {
-        return userAdminService.getUserById(userId);
+    public User getById(int userId, int actingAdminId) {
+        return userAdminService.getUserById(userId, actingAdminId);
     }
 
     public String create(User user, char[] password, int actingAdminId) {
-        String result = userAdminService.createUser(user, password);
+        String result = userAdminService.createUser(user, password, actingAdminId);
         if ("User account created successfully".equals(result)) {
             record(actingAdminId, "CREATE", user.getUserId(),
                     "Created user account " + user.getUsername() + " with role " + user.getRole() + ".");
@@ -41,7 +41,7 @@ public class UserAdminController {
     }
 
     public String changeRole(int targetUserId, UserRole role, int actingAdminId) {
-        User target = userAdminService.getUserById(targetUserId);
+        User target = userAdminService.getUserById(targetUserId, actingAdminId);
         String result = userAdminService.changeRole(targetUserId, role, actingAdminId);
         if ("User role updated successfully".equals(result)) {
             String oldRole = target == null || target.getRole() == null ? "UNKNOWN" : target.getRole().name();
@@ -52,7 +52,7 @@ public class UserAdminController {
     }
 
     public String changeStatus(int targetUserId, AccountStatus status, int actingAdminId) {
-        User target = userAdminService.getUserById(targetUserId);
+        User target = userAdminService.getUserById(targetUserId, actingAdminId);
         String result = userAdminService.changeStatus(targetUserId, status, actingAdminId);
         if ("Account status updated successfully".equals(result)) {
             String oldStatus = target == null || target.getAccountStatus() == null
@@ -65,8 +65,8 @@ public class UserAdminController {
     }
 
     public String unlock(int targetUserId, int actingAdminId) {
-        User target = userAdminService.getUserById(targetUserId);
-        String result = userAdminService.unlockUser(targetUserId);
+        User target = userAdminService.getUserById(targetUserId, actingAdminId);
+        String result = userAdminService.unlockUser(targetUserId, actingAdminId);
         if ("User account unlocked successfully".equals(result)) {
             record(actingAdminId, "UNLOCK", targetUserId,
                     "Unlocked user account " + usernameOrId(target, targetUserId) + ".");
@@ -75,8 +75,8 @@ public class UserAdminController {
     }
 
     public String resetPassword(int targetUserId, char[] password, int actingAdminId) {
-        User target = userAdminService.getUserById(targetUserId);
-        String result = userAdminService.resetPassword(targetUserId, password);
+        User target = userAdminService.getUserById(targetUserId, actingAdminId);
+        String result = userAdminService.resetPassword(targetUserId, password, actingAdminId);
         if ("Password reset successfully".equals(result)) {
             record(actingAdminId, "RESET_PASSWORD", targetUserId,
                     "Reset password for user account " + usernameOrId(target, targetUserId) + ".");

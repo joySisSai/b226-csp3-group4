@@ -15,12 +15,18 @@ public class ServiceTypeAdminService {
             "Unable to complete the operation because the database is unavailable";
 
     private final ServiceTypeRepo serviceTypeRepo;
+    private final AuthorizationService authorizationService;
 
-    public ServiceTypeAdminService(ServiceTypeRepo serviceTypeRepo) {
+    public ServiceTypeAdminService(ServiceTypeRepo serviceTypeRepo,
+                                   AuthorizationService authorizationService) {
         this.serviceTypeRepo = serviceTypeRepo;
+        this.authorizationService = authorizationService;
     }
 
-    public List<ServiceType> getAllServiceTypes() {
+    public List<ServiceType> getAllServiceTypes(int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return List.of();
+        }
         try {
             return serviceTypeRepo.getAll();
         } catch (SQLException exception) {
@@ -28,7 +34,10 @@ public class ServiceTypeAdminService {
         }
     }
 
-    public ServiceType getById(int serviceTypeId) {
+    public ServiceType getById(int serviceTypeId, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return null;
+        }
         if (serviceTypeId <= 0) {
             return null;
         }
@@ -39,7 +48,10 @@ public class ServiceTypeAdminService {
         }
     }
 
-    public String createServiceType(ServiceType serviceType) {
+    public String createServiceType(ServiceType serviceType, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         String validationError = validate(serviceType, false);
         if (validationError != null) {
             return validationError;
@@ -59,7 +71,10 @@ public class ServiceTypeAdminService {
         }
     }
 
-    public String updateServiceType(ServiceType serviceType) {
+    public String updateServiceType(ServiceType serviceType, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         String validationError = validate(serviceType, true);
         if (validationError != null) {
             return validationError;
@@ -81,7 +96,10 @@ public class ServiceTypeAdminService {
         }
     }
 
-    public String setActive(int serviceTypeId, boolean active) {
+    public String setActive(int serviceTypeId, boolean active, int actingAdminId) {
+        if (!canManage(actingAdminId)) {
+            return AuthorizationService.ADMIN_ACCESS_DENIED;
+        }
         if (serviceTypeId <= 0) {
             return "Invalid service type ID";
         }
@@ -145,5 +163,9 @@ public class ServiceTypeAdminService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    public boolean canManage(int actingAdminId) {
+        return authorizationService.canAccessAdminOperations(actingAdminId);
     }
 }

@@ -37,8 +37,8 @@ public class UserManagementView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> searchUsers();
-                case "2" -> viewUser();
+                case "1" -> searchUsers(actingAdmin);
+                case "2" -> viewUser(actingAdmin);
                 case "3" -> createUser(actingAdmin);
                 case "4" -> changeRole(actingAdmin);
                 case "5" -> changeStatus(actingAdmin);
@@ -54,19 +54,19 @@ public class UserManagementView {
         } while (!choice.equals("0"));
     }
 
-    private void searchUsers() {
+    private void searchUsers(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("User Accounts");
         ConsoleUI.printInfo("Leave the search blank to list all accounts.");
         ConsoleUI.printPrompt("Username, display name, role, or status: ");
-        printUsers(userController.search(scanner.nextLine().trim()));
+        printUsers(userController.search(scanner.nextLine().trim(), userId(actingAdmin)));
     }
 
-    private void viewUser() {
+    private void viewUser(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("User Account Details");
         int userId = promptPositiveInteger("User ID: ");
-        User user = userController.getById(userId);
+        User user = userController.getById(userId, userId(actingAdmin));
         if (user == null) {
             ConsoleUI.printError("User account not found.");
             return;
@@ -102,7 +102,7 @@ public class UserManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Change User Role");
         int userId = promptPositiveInteger("User ID: ");
-        User target = userController.getById(userId);
+        User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
             return;
@@ -125,7 +125,7 @@ public class UserManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Change Account Status");
         int userId = promptPositiveInteger("User ID: ");
-        User target = userController.getById(userId);
+        User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
             return;
@@ -148,7 +148,7 @@ public class UserManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Unlock User Account");
         int userId = promptPositiveInteger("User ID: ");
-        User target = userController.getById(userId);
+        User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
             return;
@@ -165,7 +165,7 @@ public class UserManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Reset User Password");
         int userId = promptPositiveInteger("User ID: ");
-        User target = userController.getById(userId);
+        User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
             return;

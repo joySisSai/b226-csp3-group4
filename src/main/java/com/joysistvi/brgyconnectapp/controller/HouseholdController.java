@@ -21,24 +21,24 @@ public class HouseholdController {
         this.activityLogService = activityLogService;
     }
 
-    public List<Household> getAllHouseholds() {
-        return householdService.getAllHouseholds();
+    public List<Household> getAllHouseholds(int actingUserId) {
+        return householdService.getAllHouseholds(actingUserId);
     }
 
-    public Household getById(int householdId) {
-        return householdService.getHouseholdById(householdId);
+    public Household getById(int householdId, int actingUserId) {
+        return householdService.getHouseholdById(householdId, actingUserId);
     }
 
-    public List<Household> search(String keyword) {
-        return householdService.searchHouseholds(keyword);
+    public List<Household> search(String keyword, int actingUserId) {
+        return householdService.searchHouseholds(keyword, actingUserId);
     }
 
-    public List<Resident> getMembers(int householdId) {
-        return householdService.getMembers(householdId);
+    public List<Resident> getMembers(int householdId, int actingUserId) {
+        return householdService.getMembers(householdId, actingUserId);
     }
 
     public String create(Household household, int actingUserId) {
-        String result = householdService.createHousehold(household);
+        String result = householdService.createHousehold(household, actingUserId);
         if ("Household created successfully".equals(result)) {
             record(actingUserId, "CREATE", household.getHouseholdId(),
                     "Created household " + household.getHouseholdCode() + ".");
@@ -47,7 +47,7 @@ public class HouseholdController {
     }
 
     public String update(Household household, int actingUserId) {
-        String result = householdService.updateHousehold(household);
+        String result = householdService.updateHousehold(household, actingUserId);
         if ("Household updated successfully".equals(result)) {
             record(actingUserId, "UPDATE", household.getHouseholdId(),
                     "Updated household " + household.getHouseholdCode() + ".");
@@ -56,7 +56,7 @@ public class HouseholdController {
     }
 
     public String addMember(int householdId, int residentId, int actingUserId) {
-        String result = householdService.addMember(householdId, residentId);
+        String result = householdService.addMember(householdId, residentId, actingUserId);
         if ("Resident added to household successfully".equals(result)) {
             record(actingUserId, "ADD_MEMBER", householdId,
                     "Added resident " + residentId + " to household " + householdId + ".");
@@ -65,7 +65,7 @@ public class HouseholdController {
     }
 
     public String removeMember(int householdId, int residentId, int actingUserId) {
-        String result = householdService.removeMember(householdId, residentId);
+        String result = householdService.removeMember(householdId, residentId, actingUserId);
         if ("Resident removed from household successfully".equals(result)) {
             record(actingUserId, "REMOVE_MEMBER", householdId,
                     "Removed resident " + residentId + " from household " + householdId + ".");
@@ -74,7 +74,7 @@ public class HouseholdController {
     }
 
     public String assignHouseholdHead(int householdId, int residentId, int actingUserId) {
-        String result = householdService.assignHouseholdHead(householdId, residentId);
+        String result = householdService.assignHouseholdHead(householdId, residentId, actingUserId);
         if ("Household head assigned successfully".equals(result)) {
             record(actingUserId, "ASSIGN_HEAD", householdId,
                     "Assigned resident " + residentId + " as head of household " + householdId + ".");
@@ -83,7 +83,7 @@ public class HouseholdController {
     }
 
     public String deactivate(int householdId, int actingUserId) {
-        String result = householdService.deactivateHousehold(householdId);
+        String result = householdService.deactivateHousehold(householdId, actingUserId);
         if ("Household deactivated successfully".equals(result)) {
             record(actingUserId, "DEACTIVATE", householdId,
                     "Deactivated household " + householdId + ".");

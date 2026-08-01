@@ -11,9 +11,12 @@ import java.util.Locale;
 public class ActivityLogService {
     private static final int MAXIMUM_RESULTS = 100;
     private final ActivityLogRepo activityLogRepo;
+    private final AuthorizationService authorizationService;
 
-    public ActivityLogService(ActivityLogRepo activityLogRepo) {
+    public ActivityLogService(ActivityLogRepo activityLogRepo,
+                              AuthorizationService authorizationService) {
         this.activityLogRepo = activityLogRepo;
+        this.authorizationService = authorizationService;
     }
 
     public boolean record(Integer userId,
@@ -38,12 +41,13 @@ public class ActivityLogService {
         }
     }
 
-    public List<ActivityLog> search(Integer userId,
+    public List<ActivityLog> search(int actingAdminId,
+                                    Integer userId,
                                     String action,
                                     String entityType,
                                     LocalDate dateFrom,
                                     LocalDate dateTo) {
-        if (userId != null && userId <= 0) {
+        if (!canView(actingAdminId) || userId != null && userId <= 0) {
             return List.of();
         }
         if (dateFrom != null && dateTo != null && dateFrom.isAfter(dateTo)) {
@@ -63,8 +67,8 @@ public class ActivityLogService {
         }
     }
 
-    public ActivityLog getById(long activityLogId) {
-        if (activityLogId <= 0) {
+    public ActivityLog getById(long activityLogId, int actingAdminId) {
+        if (!canView(actingAdminId) || activityLogId <= 0) {
             return null;
         }
         try {
@@ -93,5 +97,9 @@ public class ActivityLogService {
 
     private boolean isBlank(String value) {
         return value == null || value.isBlank();
+    }
+
+    public boolean canView(int actingAdminId) {
+        return authorizationService.canAccessAdminOperations(actingAdminId);
     }
 }

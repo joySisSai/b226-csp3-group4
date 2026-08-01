@@ -21,16 +21,16 @@ public class ServiceTypeAdminController {
         this.activityLogService = activityLogService;
     }
 
-    public List<ServiceType> getAll() {
-        return serviceTypeService.getAllServiceTypes();
+    public List<ServiceType> getAll(int actingAdminId) {
+        return serviceTypeService.getAllServiceTypes(actingAdminId);
     }
 
-    public ServiceType getById(int serviceTypeId) {
-        return serviceTypeService.getById(serviceTypeId);
+    public ServiceType getById(int serviceTypeId, int actingAdminId) {
+        return serviceTypeService.getById(serviceTypeId, actingAdminId);
     }
 
     public String create(ServiceType serviceType, int actingUserId) {
-        String result = serviceTypeService.createServiceType(serviceType);
+        String result = serviceTypeService.createServiceType(serviceType, actingUserId);
         if ("Service type created successfully".equals(result)) {
             record(actingUserId, "CREATE", serviceType,
                     "Created service type " + serviceType.getServiceCode() + ".");
@@ -39,7 +39,7 @@ public class ServiceTypeAdminController {
     }
 
     public String update(ServiceType serviceType, int actingUserId) {
-        String result = serviceTypeService.updateServiceType(serviceType);
+        String result = serviceTypeService.updateServiceType(serviceType, actingUserId);
         if ("Service type updated successfully".equals(result)) {
             record(actingUserId, "UPDATE", serviceType,
                     "Updated service type " + serviceType.getServiceCode() + ".");
@@ -48,7 +48,7 @@ public class ServiceTypeAdminController {
     }
 
     public String setActive(int serviceTypeId, boolean active, int actingUserId) {
-        String result = serviceTypeService.setActive(serviceTypeId, active);
+        String result = serviceTypeService.setActive(serviceTypeId, active, actingUserId);
         if (result.endsWith("successfully") && activityLogService != null) {
             activityLogService.record(actingUserId, active ? "ACTIVATE" : "DEACTIVATE",
                     "SERVICE_TYPE", (long) serviceTypeId,
