@@ -15,5 +15,5 @@ public interface ResidentRepo {
         List<Resident> searchByNameOrCode(String keyword);
         boolean save(Resident resident);
         boolean update(Resident resident);
-        boolean delete(int id);
+        boolean deactivate(int id); // soft delete
     }
