@@ -15,7 +15,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
     @Override
     public List<ServiceType> getAllActive() {
         List<ServiceType> list = new ArrayList<>();
-        String sql = "SELECT * FROM service_types WHERE active = true ORDER BY service_name";
+        String sql = "SELECT * FROM service_types WHERE is_active = true ORDER BY service_name";
         try (Connection conn = dbFactory.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
