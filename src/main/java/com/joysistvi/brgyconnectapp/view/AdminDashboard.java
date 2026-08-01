@@ -10,17 +10,20 @@ public class AdminDashboard {
     private final HouseholdManagementView householdManagementView;
     private final ServiceRequestManagementView serviceRequestManagementView;
     private final ReportView reportView;
+    private final ServiceTypeManagementView serviceTypeManagementView;
 
     public AdminDashboard(Scanner scanner,
                           ResidentManagementView residentManagementView,
                           HouseholdManagementView householdManagementView,
                           ServiceRequestManagementView serviceRequestManagementView,
-                          ReportView reportView) {
+                          ReportView reportView,
+                          ServiceTypeManagementView serviceTypeManagementView) {
         this.scanner = scanner;
         this.residentManagementView = residentManagementView;
         this.householdManagementView = householdManagementView;
         this.serviceRequestManagementView = serviceRequestManagementView;
         this.reportView = reportView;
+        this.serviceTypeManagementView = serviceTypeManagementView;
     }
 
     public void show(User user) {
@@ -54,7 +57,8 @@ public class AdminDashboard {
                 case "5" -> serviceRequestManagementView.updateRequestStatus(user);
                 case "6" -> serviceRequestManagementView.viewRequestHistory();
                 case "7" -> reportView.show();
-                case "8", "9", "10" -> showComingSoon();
+                case "8" -> serviceTypeManagementView.show();
+                case "9", "10" -> showComingSoon();
                 case "0" -> { }
                 default -> {
                     ConsoleUI.printError("Please choose a valid menu option.");

@@ -7,6 +7,7 @@ import com.joysistvi.brgyconnectapp.controller.HouseholdController;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
 import com.joysistvi.brgyconnectapp.controller.ReportController;
 import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
+import com.joysistvi.brgyconnectapp.controller.ServiceTypeAdminController;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepo;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepoImpl;
@@ -24,6 +25,7 @@ import com.joysistvi.brgyconnectapp.service.AuthService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
 import com.joysistvi.brgyconnectapp.service.ReportService;
 import com.joysistvi.brgyconnectapp.service.ServiceRequestService;
+import com.joysistvi.brgyconnectapp.service.ServiceTypeAdminService;
 import com.joysistvi.brgyconnectapp.view.*;
 
 import java.util.Optional;
@@ -65,13 +67,18 @@ public class BarangayConnectApplication {
                 scanner,
                 new ReportController(new ReportService(reportRepo))
         );
+        ServiceTypeManagementView serviceTypeManagementView = new ServiceTypeManagementView(
+                scanner,
+                new ServiceTypeAdminController(new ServiceTypeAdminService(serviceTypeRepo))
+        );
         DashboardRouter dashboardRouter = new DashboardRouter(
                 new AdminDashboard(
                         scanner,
                         residentManagementView,
                         householdManagementView,
                         serviceRequestManagementView,
-                        reportView
+                        reportView,
+                        serviceTypeManagementView
                 ),
                 new StaffDashboard(
                         scanner,

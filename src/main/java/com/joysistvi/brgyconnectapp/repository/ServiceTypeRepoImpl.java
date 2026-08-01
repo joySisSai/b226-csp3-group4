@@ -25,6 +25,12 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
     }
 
     @Override
+    public List<ServiceType> getAll() throws SQLException {
+        String sql = "SELECT " + COLUMNS + " FROM service_types ORDER BY service_name";
+        return queryList(sql);
+    }
+
+    @Override
     public List<ServiceType> getAllActive() throws SQLException {
         String sql = "SELECT " + COLUMNS + """
                 FROM service_types
@@ -52,6 +58,85 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
                 return resultSet.next() ? Optional.of(mapServiceType(resultSet)) : Optional.empty();
             }
         }
+    }
+
+    @Override
+    public Optional<ServiceType> getByCode(String serviceCode) throws SQLException {
+        String sql = "SELECT " + COLUMNS + " FROM service_types WHERE service_code = ?";
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, serviceCode);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                return resultSet.next() ? Optional.of(mapServiceType(resultSet)) : Optional.empty();
+            }
+        }
+    }
+
+    @Override
+    public boolean save(ServiceType serviceType) throws SQLException {
+        String sql = """
+                INSERT INTO service_types (
+                    service_code, service_name, description, default_fee,
+                    expected_processing_days, is_active
+                ) VALUES (?, ?, ?, ?, ?, ?)
+                """;
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, serviceType.getServiceCode());
+            statement.setString(2, serviceType.getServiceName());
+            statement.setString(3, serviceType.getDescription());
+            statement.setBigDecimal(4, serviceType.getDefaultFee());
+            statement.setInt(5, serviceType.getExpectedProcessingDays());
+            statement.setBoolean(6, serviceType.isActive());
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    @Override
+    public boolean update(ServiceType serviceType) throws SQLException {
+        String sql = """
+                UPDATE service_types
+                SET service_name = ?, description = ?, default_fee = ?,
+                    expected_processing_days = ?, updated_at = NOW()
+                WHERE service_type_id = ?
+                """;
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, serviceType.getServiceName());
+            statement.setString(2, serviceType.getDescription());
+            statement.setBigDecimal(3, serviceType.getDefaultFee());
+            statement.setInt(4, serviceType.getExpectedProcessingDays());
+            statement.setInt(5, serviceType.getServiceTypeId());
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    @Override
+    public boolean setActive(int serviceTypeId, boolean active) throws SQLException {
+        String sql = """
+                UPDATE service_types
+                SET is_active = ?, updated_at = NOW()
+                WHERE service_type_id = ? AND is_active <> ?
+                """;
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setBoolean(1, active);
+            statement.setInt(2, serviceTypeId);
+            statement.setBoolean(3, active);
+            return statement.executeUpdate() > 0;
+        }
+    }
+
+    private List<ServiceType> queryList(String sql) throws SQLException {
+        List<ServiceType> serviceTypes = new ArrayList<>();
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                serviceTypes.add(mapServiceType(resultSet));
+            }
+        }
+        return serviceTypes;
     }
 
     private ServiceType mapServiceType(ResultSet resultSet) throws SQLException {
