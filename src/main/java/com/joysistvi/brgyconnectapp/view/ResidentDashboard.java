@@ -33,7 +33,7 @@ public class ResidentDashboard {
                     viewMyProfile(user);
                     break;
                 case "2":
-                    new SubmitServiceRequestView(scanner).show(user);
+                    //new SubmitServiceRequestView(scanner).show(user);
                     break;
                 case "3":
                     ConsoleUI.printInfo("Feature coming soon");
@@ -61,14 +61,20 @@ public class ResidentDashboard {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("My Profile");
 
-        Resident resident = residentController.getById(user.getUserId());
+        Integer residentId = user.getResidentId();
 
-        if (resident == null) {
-            ConsoleUI.printError("Profile record not found");
+        if (residentId == null) {
+            ConsoleUI.printError("No resident record is linked to this account.");
             return;
         }
 
-        // Display all resident details retrieved from database
+        Resident resident = residentController.getById(residentId);
+
+        if (resident == null) {
+            ConsoleUI.printError("Resident profile not found.");
+            return;
+        }
+
         System.out.printf("Resident Code   : %s%n", resident.getResidentCode());
         System.out.printf("Full Name       : %s %s %s %s%n",
                 resident.getFirstName(),
@@ -78,13 +84,17 @@ public class ResidentDashboard {
         System.out.printf("Birth Date      : %s%n", resident.getBirthDate());
         System.out.printf("Sex             : %s%n", resident.getSex());
         System.out.printf("Civil Status    : %s%n", resident.getCivilStatus());
-        System.out.printf("Contact Number  : %s%n", resident.getContactNumber());
-        System.out.printf("Email Address   : %s%n", resident.getEmail() == null ? "N/A" : resident.getEmail());
-        System.out.printf("Occupation      : %s%n", resident.getOccupation() == null ? "N/A" : resident.getOccupation());
-        System.out.printf("Registered Voter: %s%n", resident.isRegisteredVoter() ? "Yes" : "No");
-        System.out.printf("Household Head  : %s%n", resident.isHouseholdHead() ? "Yes" : "No");
+        System.out.printf("Contact Number  : %s%n",
+                resident.getContactNumber() == null ? "N/A" : resident.getContactNumber());
+        System.out.printf("Email Address   : %s%n",
+                resident.getEmail() == null ? "N/A" : resident.getEmail());
+        System.out.printf("Occupation      : %s%n",
+                resident.getOccupation() == null ? "N/A" : resident.getOccupation());
+        System.out.printf("Registered Voter: %s%n",
+                resident.isRegisteredVoter() ? "Yes" : "No");
+        System.out.printf("Household Head  : %s%n",
+                resident.isHouseholdHead() ? "Yes" : "No");
         System.out.printf("Residency Status: %s%n", resident.getResidencyStatus());
-        System.out.printf("Date Registered : %s%n", resident.getDateRegistered());
-        System.out.printf("Account Status  : %s%n", resident.isActive() ? "Active" : "Inactive");
+        System.out.printf("Account Status  : %s%n", user.getAccountStatus());
     }
 }

@@ -15,14 +15,41 @@ public class ResidentService {
 
     // Add resident — checks for required fields and duplicate codes
     public String addResident(Resident resident) {
-        if (resident.getResidentCode().isBlank() || resident.getFirstName().isBlank()
-                || resident.getLastName().isBlank() || resident.getContactNumber().isBlank())
-            return "Resident Code, Name, and Contact are required";
-        if (resident.getBirthDate() == null)
-            return "Birth date is required";
-        if (repo.getByCode(resident.getResidentCode()).isPresent())
+        if (resident == null) {
+            return "Resident information is required";
+        }
+
+        if (resident.getResidentCode() == null ||
+                resident.getResidentCode().isBlank() ||
+                resident.getFirstName() == null ||
+                resident.getFirstName().isBlank() ||
+                resident.getLastName() == null ||
+                resident.getLastName().isBlank()) {
+            return "Resident code, first name, and last name are required";
+        }
+
+        if (resident.getBirthDate() == null ||
+                resident.getSex() == null ||
+                resident.getCivilStatus() == null ||
+                resident.getResidencyStatus() == null) {
+            return "Birth date, sex, civil status, and residency status are required";
+        }
+
+        if (repo.getByCode(resident.getResidentCode().trim()).isPresent()) {
             return "Resident code already exists";
-        return repo.save(resident) ? "Resident added successfully" : "Failed to add resident";
+        }
+
+        return repo.save(resident)
+                ? "Resident added successfully"
+                : "Failed to add resident";
+    }
+
+    public List<Resident> searchResidents(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return List.of();
+        }
+
+        return repo.searchByNameOrCode(keyword.trim());
     }
 
     // Update resident — validates that the ID is valid

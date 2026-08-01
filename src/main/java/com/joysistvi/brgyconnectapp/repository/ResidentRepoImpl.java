@@ -33,16 +33,26 @@ public class ResidentRepoImpl implements ResidentRepo {
 
     @Override
     public List<Resident> getAllActive() {
-        List<Resident> list = new ArrayList<>();
-        String sql = "SELECT * FROM residents WHERE active = true ORDER BY last_name, first_name";
+        List<Resident> residents = new ArrayList<>();
+        String sql = """
+        SELECT *
+        FROM residents
+        WHERE residency_status = 'ACTIVE'
+        ORDER BY last_name, first_name
+        """;
+
         try (Connection conn = dbFactory.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-            while (rs.next()) list.add(mapToResident(rs));
+
+            while (rs.next()) {
+                residents.add(mapToResident(rs));
+            }
         } catch (SQLException e) {
             System.err.println("Error fetching active residents: " + e.getMessage());
         }
-        return list;
+
+        return residents;
     }
 
     // Get one resident using their primary key ID

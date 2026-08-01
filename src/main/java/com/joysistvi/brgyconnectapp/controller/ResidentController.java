@@ -15,7 +15,9 @@ public class ResidentController {
     public ResidentController(ResidentService service) {
         this.service = service;
     }
-
+    public List<Resident> searchResidents(String keyword) {
+        return service.searchResidents(keyword);
+    }
     public List<Resident> getActiveResidents() { return service.getAllActive(); }
     public List<Resident> getAllResidents() { return service.getAllResidents(); }
     public Resident getById(Integer id) { return service.getResidentById(id); }
