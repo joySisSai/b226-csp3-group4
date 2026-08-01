@@ -5,12 +5,15 @@ import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
 import com.joysistvi.brgyconnectapp.controller.HouseholdController;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
+import com.joysistvi.brgyconnectapp.controller.ReportController;
 import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepo;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepoImpl;
+import com.joysistvi.brgyconnectapp.repository.ReportRepo;
+import com.joysistvi.brgyconnectapp.repository.ReportRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ServiceRequestRepo;
 import com.joysistvi.brgyconnectapp.repository.ServiceRequestRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ServiceTypeRepo;
@@ -19,6 +22,7 @@ import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
 import com.joysistvi.brgyconnectapp.service.AuthService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
+import com.joysistvi.brgyconnectapp.service.ReportService;
 import com.joysistvi.brgyconnectapp.service.ServiceRequestService;
 import com.joysistvi.brgyconnectapp.view.*;
 
@@ -56,18 +60,25 @@ public class BarangayConnectApplication {
                 scanner,
                 new ServiceRequestController(serviceRequestService)
         );
+        ReportRepo reportRepo = new ReportRepoImpl(connectionFactory);
+        ReportView reportView = new ReportView(
+                scanner,
+                new ReportController(new ReportService(reportRepo))
+        );
         DashboardRouter dashboardRouter = new DashboardRouter(
                 new AdminDashboard(
                         scanner,
                         residentManagementView,
                         householdManagementView,
-                        serviceRequestManagementView
+                        serviceRequestManagementView,
+                        reportView
                 ),
                 new StaffDashboard(
                         scanner,
                         residentManagementView,
                         householdManagementView,
-                        serviceRequestManagementView
+                        serviceRequestManagementView,
+                        reportView
                 ),
                 new ResidentDashboard(scanner)
         );

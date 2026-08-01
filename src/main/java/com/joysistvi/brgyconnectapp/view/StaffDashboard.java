@@ -9,15 +9,18 @@ public class StaffDashboard {
     private final ResidentManagementView residentManagementView;
     private final HouseholdManagementView householdManagementView;
     private final ServiceRequestManagementView serviceRequestManagementView;
+    private final ReportView reportView;
 
     public StaffDashboard(Scanner scanner,
                           ResidentManagementView residentManagementView,
                           HouseholdManagementView householdManagementView,
-                          ServiceRequestManagementView serviceRequestManagementView) {
+                          ServiceRequestManagementView serviceRequestManagementView,
+                          ReportView reportView) {
         this.scanner = scanner;
         this.residentManagementView = residentManagementView;
         this.householdManagementView = householdManagementView;
         this.serviceRequestManagementView = serviceRequestManagementView;
+        this.reportView = reportView;
     }
 
     public void show(User user) {
@@ -45,7 +48,7 @@ public class StaffDashboard {
                 case "4" -> serviceRequestManagementView.createRequest(user);
                 case "5" -> serviceRequestManagementView.updateRequestStatus(user);
                 case "6" -> serviceRequestManagementView.viewRequestHistory();
-                case "7" -> showComingSoon();
+                case "7" -> reportView.show();
                 case "0" -> { }
                 default -> {
                     ConsoleUI.printError("Please choose a valid menu option.");
@@ -66,12 +69,6 @@ public class StaffDashboard {
         ConsoleUI.printHeader("Staff Dashboard");
         System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
-    }
-
-    private void showComingSoon() {
-        System.out.println();
-        ConsoleUI.printInfo("This feature is not implemented yet.");
-        pause();
     }
 
     private void pause() {
