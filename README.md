@@ -20,19 +20,19 @@ The `.env` file uses these settings:
 
 | Variable | Required | Example |
 | --- | --- | --- |
-| `BARANGAYCONNECT_DB_URL` | Yes | `jdbc:mysql://localhost:3306/barangayconnect_db` |
-| `BARANGAYCONNECT_DB_USERNAME` | Yes | `root` |
-| `BARANGAYCONNECT_DB_PASSWORD` | No | Your MySQL password; omit it only for a blank password |
+| `DB_URL` | Yes | `jdbc:mysql://localhost:3306/barangayconnect_db` |
+| `DB_USERNAME` | Yes | `root` |
+| `DB_PASSWORD` | No | Your MySQL password; omit it only for a blank password |
 
 Example `.env`:
 
 ```dotenv
-BARANGAYCONNECT_DB_URL=jdbc:mysql://localhost:3306/barangayconnect_db
-BARANGAYCONNECT_DB_USERNAME=root
-BARANGAYCONNECT_DB_PASSWORD=replace-with-your-password
+DB_URL=jdbc:mysql://localhost:3306/barangayconnect_db
+DB_USERNAME=root
+DB_PASSWORD=replace-with-your-password
 ```
 
-For a local MySQL account with a blank password, leave `BARANGAYCONNECT_DB_PASSWORD=` empty.
+For a local MySQL account with a blank password, leave `DB_PASSWORD=` empty.
 
 In IntelliJ, open **Run → Edit Configurations**, enable **EnvFile**, and select `$PROJECT_DIR$/.env`. The EnvFile integration exposes those values as ordinary environment variables to the application.
 

@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record DatabaseConfig(String url, String username, String password) {
-    private static final String URL_ENV = "BARANGAYCONNECT_DB_URL";
-    private static final String USERNAME_ENV = "BARANGAYCONNECT_DB_USERNAME";
-    private static final String PASSWORD_ENV = "BARANGAYCONNECT_DB_PASSWORD";
+    private static final String URL_ENV = "DB_URL";
+    private static final String USERNAME_ENV = "DB_USERNAME";
+    private static final String PASSWORD_ENV = "DB_PASSWORD";
 
     private static final String URL_PROPERTY = "barangayconnect.db.url";
     private static final String USERNAME_PROPERTY = "barangayconnect.db.username";

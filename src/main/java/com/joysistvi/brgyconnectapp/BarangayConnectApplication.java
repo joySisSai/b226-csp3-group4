@@ -163,8 +163,8 @@ public class BarangayConnectApplication {
             return connectionFactory;
         } catch (IllegalStateException exception) {
             System.err.println("Application startup failed: " + exception.getMessage());
-            System.err.println("Configure the project .env file or set BARANGAYCONNECT_DB_URL, " +
-                    "BARANGAYCONNECT_DB_USERNAME, and optionally BARANGAYCONNECT_DB_PASSWORD.");
+            System.err.println("Configure the project .env file or set DB_URL, " +
+                    "DB_USERNAME, and optionally DB_PASSWORD.");
             return null;
         } catch (SQLException exception) {
             System.err.println("Application startup failed: unable to connect to the database.");
