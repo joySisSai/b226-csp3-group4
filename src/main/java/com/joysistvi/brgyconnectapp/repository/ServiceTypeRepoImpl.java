@@ -91,7 +91,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
         String sql = """
             INSERT INTO service_types (
                 service_code, service_name, description, default_fee,
-                expected_processing_days, active, created_at, updated_at
+                expected_processing_days, is_active, created_at, updated_at
             ) VALUES (?,?,?,?,?,?, NOW(), NOW())
             """;
         try (Connection conn = dbFactory.openConnection();
@@ -114,7 +114,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
         String sql = """
             UPDATE service_types SET
                 service_code=?, service_name=?, description=?, default_fee=?,
-                expected_processing_days=?, active=?, updated_at=NOW()
+                expected_processing_days=?, is_active=?, updated_at=NOW()
             WHERE service_type_id=?
             """;
         try (Connection conn = dbFactory.openConnection();
@@ -136,7 +136,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
     @Override
     public boolean deactivate(Integer id) {
         // Soft delete: keep record but mark inactive
-        String sql = "UPDATE service_types SET active = false, updated_at = NOW() WHERE service_type_id = ?";
+        String sql = "UPDATE service_types SET is_active = false, updated_at = NOW() WHERE service_type_id = ?";
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
@@ -156,7 +156,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
         t.setDescription(rs.getString("description"));
         t.setDefaultFee(rs.getBigDecimal("default_fee"));
         t.setExpectedProcessingDays(rs.getInt("expected_processing_days"));
-        t.setActive(rs.getBoolean("active"));
+        t.setActive(rs.getBoolean("is_active"));
 
         Timestamp createdAt = rs.getTimestamp("created_at");
         if (createdAt != null) t.setCreatedAt(createdAt.toLocalDateTime());

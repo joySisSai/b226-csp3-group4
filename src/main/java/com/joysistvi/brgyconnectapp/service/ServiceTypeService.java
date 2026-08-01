@@ -16,8 +16,14 @@ public class ServiceTypeService {
 
     public String addServiceType(ServiceType type) {
         // Validate required fields
-        if (type.getServiceCode().isBlank() || type.getServiceName().isBlank())
+        if (type == null) {
+            return "Service information is required";
+        }
+
+        if (type.getServiceCode() == null || type.getServiceCode().isBlank() ||
+                type.getServiceName() == null || type.getServiceName().isBlank()) {
             return "Service code and name are required";
+        }
         if (type.getDefaultFee() == null || type.getDefaultFee().signum() < 0)
             return "Valid service fee is required";
         if (type.getExpectedProcessingDays() <= 0)

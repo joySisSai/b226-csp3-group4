@@ -20,6 +20,9 @@ public class ServiceRequestService {
 
     // Submit new request — validates resident exists and required fields
     public String submitRequest(ServiceRequest request) {
+        if (request == null)
+            return "Request data cannot be empty";
+
         // Validate required fields
         if (request.getResidentId() == null || request.getResidentId() <= 0)
             return "Resident ID is required";

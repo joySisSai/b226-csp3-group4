@@ -72,14 +72,22 @@ public class SubmitServiceRequestView {
         }
 
         // Prepare request data
+        Integer residentId = loggedInUser.getResidentId();
+
+        if (residentId == null) {
+            ConsoleUI.printError("No resident record is linked to this account.");
+            return;
+        }
+
         ServiceRequest newRequest = new ServiceRequest();
-        newRequest.setResidentId(loggedInUser.getUserId());
+        newRequest.setResidentId(residentId);
+        newRequest.setCreatedByUserId(loggedInUser.getUserId());
         newRequest.setServiceTypeId(selectedService.getServiceTypeId());
         newRequest.setPurpose(purpose);
-        newRequest.setServiceFeeSnapshot(selectedService.getDefaultFee());
 
-        // Submit and show result
+// The service layer should load the fee from the database.
         String resultMessage = requestController.submitRequest(newRequest);
+
         if (resultMessage.toLowerCase().contains("success")) {
             ConsoleUI.printSuccess(resultMessage);
         } else {

@@ -144,23 +144,75 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
     // Update existing request details and status
     @Override
     public boolean update(ServiceRequest request) {
-        try (Connection conn = dbFactory.openConnection();
-             PreparedStatement stmt = conn.prepareStatement(UPDATE)) {
-            stmt.setObject(1, request.getServiceTypeId());
-            stmt.setString(2, request.getPurpose());
-            stmt.setDate(3, Date.valueOf(request.getRequestDate()));
-            stmt.setBigDecimal(4, request.getServiceFeeSnapshot());
-            stmt.setString(5, request.getStatus().name());
-            stmt.setString(6, request.getRemarks());
-            stmt.setObject(7, request.getProcessedByUserId());
-            stmt.setTimestamp(8, request.getProcessedAt() != null ? Timestamp.valueOf(request.getProcessedAt()) : null);
-            stmt.setTimestamp(9, request.getReleasedAt() != null ? Timestamp.valueOf(request.getReleasedAt()) : null);
-            stmt.setLong(10, request.getRequestId());
-            return stmt.executeUpdate() > 0;
+        // Load existing record first to capture old status
+        ServiceRequest existing = getById(request.getRequestId());
+        if (existing == null) return false;
+
+        // SQL: update main request + insert history
+        String sqlUpdate = """
+        UPDATE service_requests SET
+            service_type_id = ?, purpose = ?, request_date = ?, service_fee_snapshot = ?,
+            status = ?, remarks = ?, processed_by_user_id = ?, processed_at = ?,
+            released_at = ?, updated_at = NOW()
+        WHERE request_id = ?
+        """;
+
+        String sqlHistory = """
+        INSERT INTO request_status_history
+        (request_id, old_status, new_status, remarks, changed_by_user_id, changed_at)
+        VALUES (?, ?, ?, ?, ?, NOW())
+        """;
+
+        try (Connection conn = dbFactory.openConnection()) {
+            conn.setAutoCommit(false); // Start transaction
+
+            try {
+                // Update the main request record
+                try (PreparedStatement stmtUpdate = conn.prepareStatement(sqlUpdate)) {
+                    stmtUpdate.setObject(1, request.getServiceTypeId());
+                    stmtUpdate.setString(2, request.getPurpose());
+                    stmtUpdate.setDate(3, Date.valueOf(request.getRequestDate()));
+                    stmtUpdate.setBigDecimal(4, request.getServiceFeeSnapshot());
+                    stmtUpdate.setString(5, request.getStatus().name());
+                    stmtUpdate.setString(6, request.getRemarks());
+                    stmtUpdate.setObject(7, request.getProcessedByUserId());
+                    stmtUpdate.setTimestamp(8, request.getProcessedAt() != null ? Timestamp.valueOf(request.getProcessedAt()) : null);
+                    stmtUpdate.setTimestamp(9, request.getReleasedAt() != null ? Timestamp.valueOf(request.getReleasedAt()) : null);
+                    stmtUpdate.setLong(10, request.getRequestId());
+
+                    if (stmtUpdate.executeUpdate() == 0) {
+                        conn.rollback();
+                        return false;
+                    }
+                }
+
+                // Insert history ONLY if status actually changed
+                if (existing.getStatus() != request.getStatus()) {
+                    try (PreparedStatement stmtHist = conn.prepareStatement(sqlHistory)) {
+                        stmtHist.setLong(1, request.getRequestId());
+                        stmtHist.setString(2, existing.getStatus().name());
+                        stmtHist.setString(3, request.getStatus().name());
+                        stmtHist.setString(4, request.getRemarks() == null ? "Status updated" : request.getRemarks());
+                        stmtHist.setInt(5, request.getProcessedByUserId());
+                        stmtHist.executeUpdate();
+                    }
+                }
+
+                conn.commit(); // Both succeed → save
+                return true;
+
+            } catch (SQLException e) {
+                conn.rollback(); // Any error → undo both
+                System.err.println("Update transaction failed: " + e.getMessage());
+                return false;
+            } finally {
+                conn.setAutoCommit(true); // Restore default
+            }
+
         } catch (SQLException e) {
-            System.err.println("Update request error: " + e.getMessage());
+            System.err.println("Update error: " + e.getMessage());
+            return false;
         }
-        return false;
     }
 
     // Convert database row to ServiceRequest object
