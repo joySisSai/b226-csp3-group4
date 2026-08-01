@@ -63,7 +63,7 @@ public class ResidentService {
         }
     }
 
-    // Add resident — checks for required fields and duplicate codes
+    // Add a resident after validation; the repository assigns the resident code.
     public String addResident(Resident resident, int actingUserId) {
         if (!canManage(actingUserId)) {
             return AuthorizationService.STAFF_ACCESS_DENIED;
@@ -74,15 +74,13 @@ public class ResidentService {
         }
 
         try {
-            if (repo.getByCode(resident.getResidentCode().trim()).isPresent()) {
-                return "Resident code already exists";
+            if (!repo.save(resident)) {
+                return "Failed to add resident";
             }
-            return repo.save(resident)
-                    ? "Resident added successfully"
-                    : "Failed to add resident";
+            return "Resident added successfully. Resident code: " + resident.getResidentCode();
         } catch (SQLException exception) {
             return DatabaseErrors.isConstraintViolation(exception)
-                    ? "Resident code already exists"
+                    ? "Resident information conflicts with an existing record"
                     : DATABASE_ERROR;
         }
     }
@@ -120,7 +118,7 @@ public class ResidentService {
                     : "Failed to update resident";
         } catch (SQLException exception) {
             return DatabaseErrors.isConstraintViolation(exception)
-                    ? "Resident code already exists"
+                    ? "Resident information conflicts with an existing record"
                     : DATABASE_ERROR;
         }
     }
@@ -143,10 +141,9 @@ public class ResidentService {
         if (resident == null) {
             return "Resident information is required";
         }
-        if (isBlank(resident.getResidentCode()) ||
-                isBlank(resident.getFirstName()) ||
+        if (isBlank(resident.getFirstName()) ||
                 isBlank(resident.getLastName())) {
-            return "Resident code, first name, and last name are required";
+            return "First name and last name are required";
         }
         if (resident.getSex() == null ||
                 resident.getCivilStatus() == null ||

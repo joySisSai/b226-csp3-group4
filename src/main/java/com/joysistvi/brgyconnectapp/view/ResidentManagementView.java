@@ -95,7 +95,7 @@ public class ResidentManagementView {
         ConsoleUI.printHeader("Register Resident");
 
         Resident resident = new Resident();
-        resident.setResidentCode(promptRequired("Resident code: "));
+        ConsoleUI.printInfo("The resident code will be generated automatically.");
         resident.setFirstName(promptRequired("First name: "));
         resident.setMiddleName(promptOptional("Middle name (optional): "));
         resident.setLastName(promptRequired("Last name: "));

@@ -25,6 +25,8 @@ Close and reopen the terminal after changing `Path`.
 
 ## Database configuration
 
+For a new local database, import [`database/schema.sql`](database/schema.sql) first and [`database/seed.sql`](database/seed.sql) second. See [`database/README.md`](database/README.md) for setup instructions. These scripts reset application data and must only be used with a local development database.
+
 Database credentials are not stored in source code. Each team member should copy the committed example to a local `.env` file, then update its values.
 
 PowerShell:
