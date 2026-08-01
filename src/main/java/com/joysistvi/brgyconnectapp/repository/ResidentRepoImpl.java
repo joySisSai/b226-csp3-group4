@@ -31,6 +31,20 @@ public class ResidentRepoImpl implements ResidentRepo {
         return list;
     }
 
+    @Override
+    public List<Resident> getAllActive() {
+        List<Resident> list = new ArrayList<>();
+        String sql = "SELECT * FROM residents WHERE active = true ORDER BY last_name, first_name";
+        try (Connection conn = dbFactory.openConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) list.add(mapToResident(rs));
+        } catch (SQLException e) {
+            System.err.println("Error fetching active residents: " + e.getMessage());
+        }
+        return list;
+    }
+
     // Get one resident using their primary key ID
     @Override
     public Optional<Resident> getById(int id) {
@@ -203,8 +217,8 @@ public class ResidentRepoImpl implements ResidentRepo {
         r.setContactNumber(rs.getString("contact_number"));
         r.setEmail(rs.getString("email"));
         r.setOccupation(rs.getString("occupation"));
-        r.setRegisteredVoter(rs.getBoolean("registered_voter"));
-        r.setHouseholdHead(rs.getBoolean("household_head"));
+        r.setRegisteredVoter(rs.getBoolean("is_registered_voter"));
+        r.setHouseholdHead(rs.getBoolean("is_household_head"));
         r.setResidencyStatus(ResidencyStatus.valueOf(rs.getString("residency_status")));
         r.setDateRegistered(rs.getDate("date_registered").toLocalDate());
 

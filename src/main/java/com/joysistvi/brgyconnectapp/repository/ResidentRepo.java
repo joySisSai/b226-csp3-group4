@@ -10,6 +10,7 @@ import java.util.Optional;
  */
 public interface ResidentRepo {
         List<Resident> getAll();
+        List<Resident> getAllActive();
         Optional<Resident> getById(int id);
         Optional<Resident> getByCode(String code);
         List<Resident> searchByNameOrCode(String keyword);

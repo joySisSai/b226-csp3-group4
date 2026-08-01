@@ -1,8 +1,8 @@
 package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
+import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.User;
-import com.joysistvi.brgyconnectapp.service.ResidentService;
 
 import java.util.Scanner;
 
@@ -12,11 +12,9 @@ public class ResidentDashboard {
 
     public ResidentDashboard(Scanner scanner) {
         this.scanner = scanner;
-        ResidentService residentService = new ResidentService();
-        this.residentController = new ResidentController(residentService);
+        this.residentController = new ResidentController();
     }
 
-    // Show main menu for resident users only
     public void show(User user) {
         String choice;
         do {
@@ -27,39 +25,66 @@ public class ResidentDashboard {
             ConsoleUI.printMenuOption("2", "Submit Service Request");
             ConsoleUI.printMenuOption("3", "Check Request Status");
             ConsoleUI.printMenuOption("0", "Log Out");
-            System.out.println();
-            ConsoleUI.printPrompt("Select an option: ");
+            ConsoleUI.printPrompt("Select option: ");
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1": viewMyProfile(user); break;
-                case "2": ConsoleUI.printInfo("Service Request form — ready"); break;
-                case "3": ConsoleUI.printInfo("View my requests — ready"); break;
-                case "0": ConsoleUI.printSuccess("Logged out successfully."); break;
-                default: ConsoleUI.printError("Invalid choice — please try again.");
+                case "1":
+                    viewMyProfile(user);
+                    break;
+                case "2":
+                    new SubmitServiceRequestView(scanner).show(user);
+                    break;
+                case "3":
+                    ConsoleUI.printInfo("Feature coming soon");
+                    break;
+                case "0":
+                    ConsoleUI.printSuccess("Logged out");
+                    break;
+                default:
+                    ConsoleUI.printError("Invalid choice");
             }
-
             if (!choice.equals("0")) {
-                System.out.println();
-                ConsoleUI.printPrompt("Press Enter to return to menu...");
+                ConsoleUI.printPrompt("\nPress Enter to continue...");
                 scanner.nextLine();
             }
         } while (!choice.equals("0"));
     }
 
-    // Display welcome header
     private void printHeader(User user) {
         ConsoleUI.printHeader("Resident Dashboard");
-        System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
-        System.out.println();
+        System.out.println("Welcome, " + user.getDisplayName() + "\n");
     }
 
-    // Placeholder for profile view — will pull from logged-in resident data
+    // Load full resident record from database using logged-in user ID
     private void viewMyProfile(User user) {
-        ConsoleUI.printSubHeader("My Profile");
-        System.out.println("User ID  : " + user.getUserId());
-        System.out.println("Full Name: " + user.getDisplayName());
-        System.out.println("Role     : " + user.getRole());
-        System.out.println("Status   : Active");
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("My Profile");
+
+        Resident resident = residentController.getById(user.getUserId());
+
+        if (resident == null) {
+            ConsoleUI.printError("Profile record not found");
+            return;
+        }
+
+        // Display all resident details retrieved from database
+        System.out.printf("Resident Code   : %s%n", resident.getResidentCode());
+        System.out.printf("Full Name       : %s %s %s %s%n",
+                resident.getFirstName(),
+                resident.getMiddleName() == null ? "" : resident.getMiddleName(),
+                resident.getLastName(),
+                resident.getSuffix() == null ? "" : resident.getSuffix());
+        System.out.printf("Birth Date      : %s%n", resident.getBirthDate());
+        System.out.printf("Sex             : %s%n", resident.getSex());
+        System.out.printf("Civil Status    : %s%n", resident.getCivilStatus());
+        System.out.printf("Contact Number  : %s%n", resident.getContactNumber());
+        System.out.printf("Email Address   : %s%n", resident.getEmail() == null ? "N/A" : resident.getEmail());
+        System.out.printf("Occupation      : %s%n", resident.getOccupation() == null ? "N/A" : resident.getOccupation());
+        System.out.printf("Registered Voter: %s%n", resident.isRegisteredVoter() ? "Yes" : "No");
+        System.out.printf("Household Head  : %s%n", resident.isHouseholdHead() ? "Yes" : "No");
+        System.out.printf("Residency Status: %s%n", resident.getResidencyStatus());
+        System.out.printf("Date Registered : %s%n", resident.getDateRegistered());
+        System.out.printf("Account Status  : %s%n", resident.isActive() ? "Active" : "Inactive");
     }
 }

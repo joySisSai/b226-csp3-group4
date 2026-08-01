@@ -11,6 +11,7 @@ public class ResidentService {
 
     public List<Resident> getAllResidents() { return repo.getAll(); }
     public Resident getResidentById(int id) { return repo.getById(id).orElse(null); }
+    public List<Resident> getAllActive() { return repo.getAllActive();}
 
     // Add resident — checks for required fields and duplicate codes
     public String addResident(Resident resident) {

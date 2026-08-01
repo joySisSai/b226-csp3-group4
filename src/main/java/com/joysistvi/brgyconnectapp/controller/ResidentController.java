@@ -5,17 +5,21 @@ import com.joysistvi.brgyconnectapp.service.ResidentService;
 
 import java.util.List;
 
-// Middleman between UI and Service — receives requests and returns results
 public class ResidentController {
-    private final ResidentService residentService;
+    private final ResidentService service;
 
-    public ResidentController(ResidentService residentService) {
-        this.residentService = residentService;
+    public ResidentController() {
+        this.service = new ResidentService();
     }
 
-    public List<Resident> getAllResidents() { return residentService.getAllResidents(); }
-    public Resident getResidentById(int id) { return residentService.getResidentById(id); }
-    public String addResident(Resident resident) { return residentService.addResident(resident); }
-    public String updateResident(Resident resident) { return residentService.updateResident(resident); }
-    public String deactivateResident(int id) { return residentService.deactivateResident(id); }
+    public ResidentController(ResidentService service) {
+        this.service = service;
+    }
+
+    public List<Resident> getActiveResidents() { return service.getAllActive(); }
+    public List<Resident> getAllResidents() { return service.getAllResidents(); }
+    public Resident getById(Integer id) { return service.getResidentById(id); }
+    public String register(Resident r) { return service.addResident(r); }
+    public String update(Resident r) { return service.updateResident(r); }
+    public String deactivate(Integer id) { return service.deactivateResident(id); }
 }
