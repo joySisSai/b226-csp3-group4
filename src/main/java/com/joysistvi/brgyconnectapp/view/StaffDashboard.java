@@ -6,9 +6,11 @@ import java.util.Scanner;
 
 public class StaffDashboard {
     private final Scanner scanner;
+    private final ResidentManagementView residentManagementView;
 
-    public StaffDashboard(Scanner scanner) {
+    public StaffDashboard(Scanner scanner, ResidentManagementView residentManagementView) {
         this.scanner = scanner;
+        this.residentManagementView = residentManagementView;
     }
 
     public void show(User user) {
@@ -29,12 +31,14 @@ public class StaffDashboard {
             ConsoleUI.printPrompt("Choose an option: ");
             choice = scanner.nextLine().trim();
 
-            if (!choice.equals("0")) {
-                System.out.println();
-                ConsoleUI.printInfo("This feature is not implemented yet.");
-                System.out.println();
-                ConsoleUI.printPrompt("Press Enter to continue...");
-                scanner.nextLine();
+            switch (choice) {
+                case "1" -> residentManagementView.show();
+                case "2", "3", "4", "5", "6", "7" -> showComingSoon();
+                case "0" -> { }
+                default -> {
+                    ConsoleUI.printError("Please choose a valid menu option.");
+                    pause();
+                }
             }
         } while (!choice.equals("0"));
 
@@ -50,5 +54,17 @@ public class StaffDashboard {
         ConsoleUI.printHeader("Staff Dashboard");
         System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
+    }
+
+    private void showComingSoon() {
+        System.out.println();
+        ConsoleUI.printInfo("This feature is not implemented yet.");
+        pause();
+    }
+
+    private void pause() {
+        System.out.println();
+        ConsoleUI.printPrompt("Press Enter to continue...");
+        scanner.nextLine();
     }
 }

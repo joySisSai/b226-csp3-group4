@@ -3,6 +3,7 @@ package com.joysistvi.brgyconnectapp;
 import com.joysistvi.brgyconnectapp.config.ConnectionFactory;
 import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
+import com.joysistvi.brgyconnectapp.controller.ResidentController;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
@@ -21,9 +22,13 @@ public class BarangayConnectApplication {
 
         Scanner scanner = new Scanner(System.in);
         LoginView loginView = new LoginView(authController, scanner);
+        ResidentManagementView residentManagementView = new ResidentManagementView(
+                scanner,
+                new ResidentController()
+        );
         DashboardRouter dashboardRouter = new DashboardRouter(
-                new AdminDashboard(scanner),
-                new StaffDashboard(scanner),
+                new AdminDashboard(scanner, residentManagementView),
+                new StaffDashboard(scanner, residentManagementView),
                 new ResidentDashboard(scanner)
         );
 

@@ -4,6 +4,7 @@ import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepoImpl;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public class ResidentService {
@@ -15,24 +16,9 @@ public class ResidentService {
 
     // Add resident — checks for required fields and duplicate codes
     public String addResident(Resident resident) {
-        if (resident == null) {
-            return "Resident information is required";
-        }
-
-        if (resident.getResidentCode() == null ||
-                resident.getResidentCode().isBlank() ||
-                resident.getFirstName() == null ||
-                resident.getFirstName().isBlank() ||
-                resident.getLastName() == null ||
-                resident.getLastName().isBlank()) {
-            return "Resident code, first name, and last name are required";
-        }
-
-        if (resident.getBirthDate() == null ||
-                resident.getSex() == null ||
-                resident.getCivilStatus() == null ||
-                resident.getResidencyStatus() == null) {
-            return "Birth date, sex, civil status, and residency status are required";
+        String validationError = validateResident(resident);
+        if (validationError != null) {
+            return validationError;
         }
 
         if (repo.getByCode(resident.getResidentCode().trim()).isPresent()) {
@@ -54,12 +40,46 @@ public class ResidentService {
 
     // Update resident — validates that the ID is valid
     public String updateResident(Resident resident) {
-        if (resident.getResidentId() <= 0) return "Invalid resident ID";
+        if (resident == null || resident.getResidentId() == null || resident.getResidentId() <= 0) {
+            return "Invalid resident ID";
+        }
+        String validationError = validateResident(resident);
+        if (validationError != null) {
+            return validationError;
+        }
         return repo.update(resident) ? "Resident updated successfully" : "Failed to update resident";
     }
     // Deactivate resident - soft delete
     public String deactivateResident(int id) {
         if (id <= 0) return "Invalid resident ID";
         return repo.deactivate(id) ? "Resident marked as inactive" : "Failed to update status";
+    }
+
+    private String validateResident(Resident resident) {
+        if (resident == null) {
+            return "Resident information is required";
+        }
+        if (isBlank(resident.getResidentCode()) ||
+                isBlank(resident.getFirstName()) ||
+                isBlank(resident.getLastName())) {
+            return "Resident code, first name, and last name are required";
+        }
+        if (resident.getBirthDate() == null ||
+                resident.getSex() == null ||
+                resident.getCivilStatus() == null ||
+                resident.getResidencyStatus() == null) {
+            return "Birth date, sex, civil status, and residency status are required";
+        }
+        if (resident.getBirthDate().isAfter(LocalDate.now())) {
+            return "Birth date cannot be in the future";
+        }
+        if (resident.getHouseholdId() != null && resident.getHouseholdId() <= 0) {
+            return "Household ID must be a positive whole number";
+        }
+        return null;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }
