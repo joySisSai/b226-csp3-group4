@@ -7,10 +7,14 @@ import java.util.Scanner;
 public class AdminDashboard {
     private final Scanner scanner;
     private final ResidentManagementView residentManagementView;
+    private final HouseholdManagementView householdManagementView;
 
-    public AdminDashboard(Scanner scanner, ResidentManagementView residentManagementView) {
+    public AdminDashboard(Scanner scanner,
+                          ResidentManagementView residentManagementView,
+                          HouseholdManagementView householdManagementView) {
         this.scanner = scanner;
         this.residentManagementView = residentManagementView;
+        this.householdManagementView = householdManagementView;
     }
 
     public void show(User user) {
@@ -38,7 +42,8 @@ public class AdminDashboard {
 
             switch (choice) {
                 case "1" -> residentManagementView.show();
-                case "2", "3", "4", "5", "6", "7", "8", "9", "10" -> showComingSoon();
+                case "2" -> householdManagementView.show();
+                case "3", "4", "5", "6", "7", "8", "9", "10" -> showComingSoon();
                 case "0" -> { }
                 default -> {
                     ConsoleUI.printError("Please choose a valid menu option.");

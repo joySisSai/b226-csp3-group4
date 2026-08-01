@@ -1,0 +1,352 @@
+package com.joysistvi.brgyconnectapp.view;
+
+import com.joysistvi.brgyconnectapp.controller.HouseholdController;
+import com.joysistvi.brgyconnectapp.model.Household;
+import com.joysistvi.brgyconnectapp.model.HouseholdStatus;
+import com.joysistvi.brgyconnectapp.model.Resident;
+
+import java.util.List;
+import java.util.Scanner;
+
+public class HouseholdManagementView {
+    private final Scanner scanner;
+    private final HouseholdController householdController;
+
+    public HouseholdManagementView(Scanner scanner, HouseholdController householdController) {
+        this.scanner = scanner;
+        this.householdController = householdController;
+    }
+
+    public void show() {
+        String choice;
+        do {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("Household Management");
+            ConsoleUI.printMenuOption("1", "List households");
+            ConsoleUI.printMenuOption("2", "Search households");
+            ConsoleUI.printMenuOption("3", "View household and members");
+            ConsoleUI.printMenuOption("4", "Create household");
+            ConsoleUI.printMenuOption("5", "Update household");
+            ConsoleUI.printMenuOption("6", "Add household member");
+            ConsoleUI.printMenuOption("7", "Remove household member");
+            ConsoleUI.printMenuOption("8", "Assign household head");
+            ConsoleUI.printMenuOption("9", "Deactivate household");
+            ConsoleUI.printMenuOption("0", "Back");
+            System.out.println();
+            ConsoleUI.printPrompt("Choose an option: ");
+            choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1" -> listHouseholds();
+                case "2" -> searchHouseholds();
+                case "3" -> viewHousehold();
+                case "4" -> createHousehold();
+                case "5" -> updateHousehold();
+                case "6" -> addMember();
+                case "7" -> removeMember();
+                case "8" -> assignHouseholdHead();
+                case "9" -> deactivateHousehold();
+                case "0" -> { }
+                default -> ConsoleUI.printError("Please choose a valid menu option.");
+            }
+
+            if (!choice.equals("0")) {
+                pause();
+            }
+        } while (!choice.equals("0"));
+    }
+
+    private void listHouseholds() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Household Records");
+        printHouseholds(householdController.getAllHouseholds());
+    }
+
+    private void searchHouseholds() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Search Households");
+        ConsoleUI.printPrompt("Code, address, or purok: ");
+        String keyword = scanner.nextLine().trim();
+        if (keyword.isBlank()) {
+            ConsoleUI.printError("A search keyword is required.");
+            return;
+        }
+        printHouseholds(householdController.search(keyword));
+    }
+
+    private void viewHousehold() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Household Details");
+        int householdId = promptPositiveInteger("Household ID: ");
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return;
+        }
+
+        printHouseholdDetails(household);
+        System.out.println();
+        ConsoleUI.printSubHeader("Household Members");
+        printMembers(householdController.getMembers(householdId));
+    }
+
+    private void createHousehold() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Create Household");
+        Household household = new Household();
+        household.setHouseholdCode(promptRequired("Household code: "));
+        household.setAddressLine(promptRequired("Address: "));
+        household.setPurok(promptRequired("Purok: "));
+        household.setHouseholdStatus(HouseholdStatus.ACTIVE);
+
+        printOperationResult(householdController.create(household));
+    }
+
+    private void updateHousehold() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Update Household");
+        int householdId = promptPositiveInteger("Household ID: ");
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return;
+        }
+
+        ConsoleUI.printInfo("Household code: " + household.getHouseholdCode());
+        ConsoleUI.printInfo("Press Enter to keep the current value.");
+        household.setAddressLine(promptTextUpdate("Address", household.getAddressLine()));
+        household.setPurok(promptTextUpdate("Purok", household.getPurok()));
+        printOperationResult(householdController.update(household));
+    }
+
+    private void addMember() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Add Household Member");
+        int householdId = promptPositiveInteger("Household ID: ");
+        if (!showSelectedHousehold(householdId)) {
+            return;
+        }
+        int residentId = promptPositiveInteger("Resident ID: ");
+        printOperationResult(householdController.addMember(householdId, residentId));
+    }
+
+    private void removeMember() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Remove Household Member");
+        int householdId = promptPositiveInteger("Household ID: ");
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return;
+        }
+
+        printHouseholdDetails(household);
+        System.out.println();
+        printMembers(householdController.getMembers(householdId));
+        int residentId = promptPositiveInteger("Resident ID to remove: ");
+        if (!promptYesNo("Confirm removal? (Y/N): ")) {
+            ConsoleUI.printInfo("Member removal cancelled.");
+            return;
+        }
+        printOperationResult(householdController.removeMember(householdId, residentId));
+    }
+
+    private void assignHouseholdHead() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Assign Household Head");
+        int householdId = promptPositiveInteger("Household ID: ");
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return;
+        }
+
+        printHouseholdDetails(household);
+        System.out.println();
+        List<Resident> members = householdController.getMembers(householdId);
+        printMembers(members);
+        if (members.isEmpty()) {
+            return;
+        }
+
+        int residentId = promptPositiveInteger("Resident ID for household head: ");
+        if (!promptYesNo("Confirm household-head assignment? (Y/N): ")) {
+            ConsoleUI.printInfo("Household-head assignment cancelled.");
+            return;
+        }
+        printOperationResult(householdController.assignHouseholdHead(householdId, residentId));
+    }
+
+    private void deactivateHousehold() {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Deactivate Household");
+        int householdId = promptPositiveInteger("Household ID: ");
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return;
+        }
+
+        printHouseholdDetails(household);
+        if (household.getHouseholdStatus() == HouseholdStatus.INACTIVE) {
+            ConsoleUI.printInfo("This household is already inactive.");
+            return;
+        }
+        if (!promptYesNo("Confirm deactivation? (Y/N): ")) {
+            ConsoleUI.printInfo("Household deactivation cancelled.");
+            return;
+        }
+        printOperationResult(householdController.deactivate(householdId));
+    }
+
+    private boolean showSelectedHousehold(int householdId) {
+        Household household = householdController.getById(householdId);
+        if (household == null) {
+            ConsoleUI.printError("Household record not found.");
+            return false;
+        }
+        printHouseholdDetails(household);
+        return true;
+    }
+
+    private void printHouseholds(List<Household> households) {
+        if (households == null || households.isEmpty()) {
+            ConsoleUI.printInfo("No household records found.");
+            return;
+        }
+
+        System.out.printf("%-6s %-16s %-18s %-36s %-10s%n",
+                "ID", "Code", "Purok", "Address", "Status");
+        System.out.println("-".repeat(92));
+        for (Household household : households) {
+            System.out.printf("%-6s %-16s %-18s %-36s %-10s%n",
+                    household.getHouseholdId(),
+                    abbreviate(household.getHouseholdCode(), 16),
+                    abbreviate(household.getPurok(), 18),
+                    abbreviate(household.getAddressLine(), 36),
+                    household.getHouseholdStatus());
+        }
+        System.out.println();
+        ConsoleUI.printInfo(households.size() + " record(s) found.");
+    }
+
+    private void printHouseholdDetails(Household household) {
+        System.out.printf("Household ID   : %s%n", household.getHouseholdId());
+        System.out.printf("Household Code : %s%n", valueOrDash(household.getHouseholdCode()));
+        System.out.printf("Address        : %s%n", valueOrDash(household.getAddressLine()));
+        System.out.printf("Purok          : %s%n", valueOrDash(household.getPurok()));
+        System.out.printf("Status         : %s%n", valueOrDash(household.getHouseholdStatus()));
+    }
+
+    private void printMembers(List<Resident> members) {
+        if (members == null || members.isEmpty()) {
+            ConsoleUI.printInfo("This household has no members.");
+            return;
+        }
+
+        System.out.printf("%-6s %-14s %-34s %-10s%n", "ID", "Code", "Name", "Role");
+        System.out.println("-".repeat(70));
+        for (Resident resident : members) {
+            System.out.printf("%-6s %-14s %-34s %-10s%n",
+                    resident.getResidentId(),
+                    valueOrDash(resident.getResidentCode()),
+                    abbreviate(fullName(resident), 34),
+                    resident.isHouseholdHead() ? "Head" : "Member");
+        }
+        System.out.println();
+    }
+
+    private String promptRequired(String label) {
+        while (true) {
+            ConsoleUI.printPrompt(label);
+            String value = scanner.nextLine().trim();
+            if (!value.isBlank()) {
+                return value;
+            }
+            ConsoleUI.printError("This field is required.");
+        }
+    }
+
+    private String promptTextUpdate(String label, String currentValue) {
+        while (true) {
+            ConsoleUI.printPrompt(label + " [" + valueOrDash(currentValue) + "]: ");
+            String value = scanner.nextLine().trim();
+            if (value.isEmpty()) {
+                return currentValue;
+            }
+            if (!value.isBlank()) {
+                return value;
+            }
+            ConsoleUI.printError(label + " is required.");
+        }
+    }
+
+    private int promptPositiveInteger(String label) {
+        while (true) {
+            ConsoleUI.printPrompt(label);
+            String input = scanner.nextLine().trim();
+            try {
+                int value = Integer.parseInt(input);
+                if (value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            ConsoleUI.printError("Enter a positive whole number.");
+        }
+    }
+
+    private boolean promptYesNo(String label) {
+        while (true) {
+            ConsoleUI.printPrompt(label);
+            String input = scanner.nextLine().trim();
+            if (input.equalsIgnoreCase("Y") || input.equalsIgnoreCase("YES")) {
+                return true;
+            }
+            if (input.equalsIgnoreCase("N") || input.equalsIgnoreCase("NO")) {
+                return false;
+            }
+            ConsoleUI.printError("Enter Y for yes or N for no.");
+        }
+    }
+
+    private void printOperationResult(String result) {
+        if (result != null && result.toLowerCase().contains("successfully")) {
+            ConsoleUI.printSuccess(result);
+        } else {
+            ConsoleUI.printError(result == null ? "The operation could not be completed." : result);
+        }
+    }
+
+    private String fullName(Resident resident) {
+        return String.join(" ",
+                valueOrEmpty(resident.getFirstName()),
+                valueOrEmpty(resident.getMiddleName()),
+                valueOrEmpty(resident.getLastName()),
+                valueOrEmpty(resident.getSuffix()))
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private String valueOrEmpty(Object value) {
+        return value == null ? "" : value.toString();
+    }
+
+    private String valueOrDash(Object value) {
+        return value == null || value.toString().isBlank() ? "-" : value.toString();
+    }
+
+    private String abbreviate(String value, int maximumLength) {
+        String safeValue = valueOrDash(value);
+        if (safeValue.length() <= maximumLength) {
+            return safeValue;
+        }
+        return safeValue.substring(0, maximumLength - 3) + "...";
+    }
+
+    private void pause() {
+        System.out.println();
+        ConsoleUI.printPrompt("Press Enter to continue...");
+        scanner.nextLine();
+    }
+}
