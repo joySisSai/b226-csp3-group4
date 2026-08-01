@@ -33,7 +33,7 @@ public class ResidentDashboard {
                     viewMyProfile(user);
                     break;
                 case "2":
-                    //new SubmitServiceRequestView(scanner).show(user);
+                    new SubmitServiceRequestView(scanner).show(user);
                     break;
                 case "3":
                     ConsoleUI.printInfo("Feature coming soon");
