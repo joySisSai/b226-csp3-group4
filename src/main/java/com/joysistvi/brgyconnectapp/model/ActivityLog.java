@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 public class ActivityLog {
     private Long activityLogId;
     private Integer userId;
+    private String actorUsername;
+    private String actorDisplayName;
     private String action;
     private String entityType;
     private Long entityId;
@@ -29,6 +31,10 @@ public class ActivityLog {
     public void setActivityLogId(Long activityLogId) { this.activityLogId = activityLogId; }
     public Integer getUserId() { return userId; }
     public void setUserId(Integer userId) { this.userId = userId; }
+    public String getActorUsername() { return actorUsername; }
+    public void setActorUsername(String actorUsername) { this.actorUsername = actorUsername; }
+    public String getActorDisplayName() { return actorDisplayName; }
+    public void setActorDisplayName(String actorDisplayName) { this.actorDisplayName = actorDisplayName; }
     public String getAction() { return action; }
     public void setAction(String action) { this.action = action; }
     public String getEntityType() { return entityType; }

@@ -8,7 +8,15 @@ import java.time.LocalDate;
 import java.util.List;
 
 public class ResidentService {
-    private final ResidentRepo repo = new ResidentRepoImpl();
+    private final ResidentRepo repo;
+
+    public ResidentService() {
+        this(new ResidentRepoImpl());
+    }
+
+    public ResidentService(ResidentRepo repo) {
+        this.repo = repo;
+    }
 
     public List<Resident> getAllResidents() { return repo.getAll(); }
     public Resident getResidentById(int id) { return repo.getById(id).orElse(null); }

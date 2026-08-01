@@ -12,6 +12,7 @@ public class AdminDashboard {
     private final ReportView reportView;
     private final ServiceTypeManagementView serviceTypeManagementView;
     private final UserManagementView userManagementView;
+    private final ActivityLogView activityLogView;
 
     public AdminDashboard(Scanner scanner,
                           ResidentManagementView residentManagementView,
@@ -19,7 +20,8 @@ public class AdminDashboard {
                           ServiceRequestManagementView serviceRequestManagementView,
                           ReportView reportView,
                           ServiceTypeManagementView serviceTypeManagementView,
-                          UserManagementView userManagementView) {
+                          UserManagementView userManagementView,
+                          ActivityLogView activityLogView) {
         this.scanner = scanner;
         this.residentManagementView = residentManagementView;
         this.householdManagementView = householdManagementView;
@@ -27,6 +29,7 @@ public class AdminDashboard {
         this.reportView = reportView;
         this.serviceTypeManagementView = serviceTypeManagementView;
         this.userManagementView = userManagementView;
+        this.activityLogView = activityLogView;
     }
 
     public void show(User user) {
@@ -53,16 +56,16 @@ public class AdminDashboard {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> residentManagementView.show();
-                case "2" -> householdManagementView.show();
+                case "1" -> residentManagementView.show(user);
+                case "2" -> householdManagementView.show(user);
                 case "3" -> serviceRequestManagementView.searchRequests();
                 case "4" -> serviceRequestManagementView.createRequest(user);
                 case "5" -> serviceRequestManagementView.updateRequestStatus(user);
                 case "6" -> serviceRequestManagementView.viewRequestHistory();
                 case "7" -> reportView.show();
-                case "8" -> serviceTypeManagementView.show();
+                case "8" -> serviceTypeManagementView.show(user);
                 case "9" -> userManagementView.show(user);
-                case "10" -> showComingSoon();
+                case "10" -> activityLogView.show();
                 case "0" -> { }
                 default -> {
                     ConsoleUI.printError("Please choose a valid menu option.");
@@ -83,12 +86,6 @@ public class AdminDashboard {
         ConsoleUI.printHeader("Admin Dashboard");
         System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
-    }
-
-    private void showComingSoon() {
-        System.out.println();
-        ConsoleUI.printInfo("This feature is not implemented yet.");
-        pause();
     }
 
     private void pause() {

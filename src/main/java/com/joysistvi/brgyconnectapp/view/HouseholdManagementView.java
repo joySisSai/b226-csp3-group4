@@ -4,6 +4,7 @@ import com.joysistvi.brgyconnectapp.controller.HouseholdController;
 import com.joysistvi.brgyconnectapp.model.Household;
 import com.joysistvi.brgyconnectapp.model.HouseholdStatus;
 import com.joysistvi.brgyconnectapp.model.Resident;
+import com.joysistvi.brgyconnectapp.model.User;
 
 import java.util.List;
 import java.util.Scanner;
@@ -17,7 +18,7 @@ public class HouseholdManagementView {
         this.householdController = householdController;
     }
 
-    public void show() {
+    public void show(User actingUser) {
         String choice;
         do {
             ConsoleUI.clearScreen();
@@ -40,12 +41,12 @@ public class HouseholdManagementView {
                 case "1" -> listHouseholds();
                 case "2" -> searchHouseholds();
                 case "3" -> viewHousehold();
-                case "4" -> createHousehold();
-                case "5" -> updateHousehold();
-                case "6" -> addMember();
-                case "7" -> removeMember();
-                case "8" -> assignHouseholdHead();
-                case "9" -> deactivateHousehold();
+                case "4" -> createHousehold(actingUser);
+                case "5" -> updateHousehold(actingUser);
+                case "6" -> addMember(actingUser);
+                case "7" -> removeMember(actingUser);
+                case "8" -> assignHouseholdHead(actingUser);
+                case "9" -> deactivateHousehold(actingUser);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -90,7 +91,7 @@ public class HouseholdManagementView {
         printMembers(householdController.getMembers(householdId));
     }
 
-    private void createHousehold() {
+    private void createHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Household");
         Household household = new Household();
@@ -99,10 +100,10 @@ public class HouseholdManagementView {
         household.setPurok(promptRequired("Purok: "));
         household.setHouseholdStatus(HouseholdStatus.ACTIVE);
 
-        printOperationResult(householdController.create(household));
+        printOperationResult(householdController.create(household, userId(actingUser)));
     }
 
-    private void updateHousehold() {
+    private void updateHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Household");
         int householdId = promptPositiveInteger("Household ID: ");
@@ -116,10 +117,10 @@ public class HouseholdManagementView {
         ConsoleUI.printInfo("Press Enter to keep the current value.");
         household.setAddressLine(promptTextUpdate("Address", household.getAddressLine()));
         household.setPurok(promptTextUpdate("Purok", household.getPurok()));
-        printOperationResult(householdController.update(household));
+        printOperationResult(householdController.update(household, userId(actingUser)));
     }
 
-    private void addMember() {
+    private void addMember(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Add Household Member");
         int householdId = promptPositiveInteger("Household ID: ");
@@ -127,10 +128,10 @@ public class HouseholdManagementView {
             return;
         }
         int residentId = promptPositiveInteger("Resident ID: ");
-        printOperationResult(householdController.addMember(householdId, residentId));
+        printOperationResult(householdController.addMember(householdId, residentId, userId(actingUser)));
     }
 
-    private void removeMember() {
+    private void removeMember(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Remove Household Member");
         int householdId = promptPositiveInteger("Household ID: ");
@@ -148,10 +149,10 @@ public class HouseholdManagementView {
             ConsoleUI.printInfo("Member removal cancelled.");
             return;
         }
-        printOperationResult(householdController.removeMember(householdId, residentId));
+        printOperationResult(householdController.removeMember(householdId, residentId, userId(actingUser)));
     }
 
-    private void assignHouseholdHead() {
+    private void assignHouseholdHead(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Assign Household Head");
         int householdId = promptPositiveInteger("Household ID: ");
@@ -174,10 +175,11 @@ public class HouseholdManagementView {
             ConsoleUI.printInfo("Household-head assignment cancelled.");
             return;
         }
-        printOperationResult(householdController.assignHouseholdHead(householdId, residentId));
+        printOperationResult(householdController.assignHouseholdHead(
+                householdId, residentId, userId(actingUser)));
     }
 
-    private void deactivateHousehold() {
+    private void deactivateHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Deactivate Household");
         int householdId = promptPositiveInteger("Household ID: ");
@@ -196,7 +198,11 @@ public class HouseholdManagementView {
             ConsoleUI.printInfo("Household deactivation cancelled.");
             return;
         }
-        printOperationResult(householdController.deactivate(householdId));
+        printOperationResult(householdController.deactivate(householdId, userId(actingUser)));
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private boolean showSelectedHousehold(int householdId) {

@@ -123,7 +123,7 @@ public class ResidentRepoImpl implements ResidentRepo {
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, NOW())
             """;
         try (Connection conn = dbFactory.openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
+             PreparedStatement stmt = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, resident.getResidentCode());
             stmt.setObject(2, resident.getHouseholdId());
             stmt.setString(3, resident.getSuffix());
@@ -139,7 +139,15 @@ public class ResidentRepoImpl implements ResidentRepo {
             stmt.setBoolean(13, resident.isRegisteredVoter());
             stmt.setBoolean(14, resident.isHouseholdHead());
             stmt.setString(15, resident.getContactNumber());
-            return stmt.executeUpdate() > 0;
+            if (stmt.executeUpdate() == 0) {
+                return false;
+            }
+            try (ResultSet keys = stmt.getGeneratedKeys()) {
+                if (keys.next()) {
+                    resident.setResidentId(keys.getInt(1));
+                }
+            }
+            return true;
         } catch (SQLException e) {
             System.err.println("Save error: " + e.getMessage());
         }

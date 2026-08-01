@@ -42,8 +42,8 @@ public class StaffDashboard {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> residentManagementView.show();
-                case "2" -> householdManagementView.show();
+                case "1" -> residentManagementView.show(user);
+                case "2" -> householdManagementView.show(user);
                 case "3" -> serviceRequestManagementView.searchRequests();
                 case "4" -> serviceRequestManagementView.createRequest(user);
                 case "5" -> serviceRequestManagementView.updateRequestStatus(user);

@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,14 +82,22 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
                 ) VALUES (?, ?, ?, ?, ?, ?)
                 """;
         try (Connection connection = connectionFactory.openConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, serviceType.getServiceCode());
             statement.setString(2, serviceType.getServiceName());
             statement.setString(3, serviceType.getDescription());
             statement.setBigDecimal(4, serviceType.getDefaultFee());
             statement.setInt(5, serviceType.getExpectedProcessingDays());
             statement.setBoolean(6, serviceType.isActive());
-            return statement.executeUpdate() > 0;
+            if (statement.executeUpdate() == 0) {
+                return false;
+            }
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (keys.next()) {
+                    serviceType.setServiceTypeId(keys.getInt(1));
+                }
+            }
+            return true;
         }
     }
 

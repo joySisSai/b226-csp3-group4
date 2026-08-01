@@ -2,6 +2,7 @@ package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.controller.ServiceTypeAdminController;
 import com.joysistvi.brgyconnectapp.model.ServiceType;
+import com.joysistvi.brgyconnectapp.model.User;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,7 +17,7 @@ public class ServiceTypeManagementView {
         this.serviceTypeController = serviceTypeController;
     }
 
-    public void show() {
+    public void show(User actingAdmin) {
         String choice;
         do {
             ConsoleUI.clearScreen();
@@ -34,9 +35,9 @@ public class ServiceTypeManagementView {
             switch (choice) {
                 case "1" -> listServiceTypes();
                 case "2" -> viewServiceType();
-                case "3" -> createServiceType();
-                case "4" -> updateServiceType();
-                case "5" -> changeServiceTypeStatus();
+                case "3" -> createServiceType(actingAdmin);
+                case "4" -> updateServiceType(actingAdmin);
+                case "5" -> changeServiceTypeStatus(actingAdmin);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -65,7 +66,7 @@ public class ServiceTypeManagementView {
         printServiceTypeDetails(serviceType);
     }
 
-    private void createServiceType() {
+    private void createServiceType(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Service Type");
         ServiceType serviceType = new ServiceType();
@@ -79,10 +80,10 @@ public class ServiceTypeManagementView {
             ConsoleUI.printInfo("Service-type creation cancelled.");
             return;
         }
-        printOperationResult(serviceTypeController.create(serviceType));
+        printOperationResult(serviceTypeController.create(serviceType, userId(actingAdmin)));
     }
 
-    private void updateServiceType() {
+    private void updateServiceType(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Service Type");
         int serviceTypeId = promptPositiveInteger("Service type ID: ");
@@ -107,10 +108,10 @@ public class ServiceTypeManagementView {
             ConsoleUI.printInfo("Service-type update cancelled.");
             return;
         }
-        printOperationResult(serviceTypeController.update(serviceType));
+        printOperationResult(serviceTypeController.update(serviceType, userId(actingAdmin)));
     }
 
-    private void changeServiceTypeStatus() {
+    private void changeServiceTypeStatus(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Service Type Status");
         int serviceTypeId = promptPositiveInteger("Service type ID: ");
@@ -128,7 +129,11 @@ public class ServiceTypeManagementView {
             ConsoleUI.printInfo("Status change cancelled.");
             return;
         }
-        printOperationResult(serviceTypeController.setActive(serviceTypeId, newStatus));
+        printOperationResult(serviceTypeController.setActive(serviceTypeId, newStatus, userId(actingAdmin)));
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private void printServiceTypes(List<ServiceType> serviceTypes) {

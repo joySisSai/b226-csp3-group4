@@ -3,6 +3,7 @@ package com.joysistvi.brgyconnectapp;
 import com.joysistvi.brgyconnectapp.config.ConnectionFactory;
 import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
+import com.joysistvi.brgyconnectapp.controller.ActivityLogController;
 import com.joysistvi.brgyconnectapp.controller.HouseholdController;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
 import com.joysistvi.brgyconnectapp.controller.ReportController;
@@ -12,6 +13,8 @@ import com.joysistvi.brgyconnectapp.controller.UserAdminController;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepo;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepoImpl;
+import com.joysistvi.brgyconnectapp.repository.ActivityLogRepo;
+import com.joysistvi.brgyconnectapp.repository.ActivityLogRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ReportRepo;
@@ -23,8 +26,10 @@ import com.joysistvi.brgyconnectapp.repository.ServiceTypeRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
 import com.joysistvi.brgyconnectapp.service.AuthService;
+import com.joysistvi.brgyconnectapp.service.ActivityLogService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
 import com.joysistvi.brgyconnectapp.service.ReportService;
+import com.joysistvi.brgyconnectapp.service.ResidentService;
 import com.joysistvi.brgyconnectapp.service.ServiceRequestService;
 import com.joysistvi.brgyconnectapp.service.ServiceTypeAdminService;
 import com.joysistvi.brgyconnectapp.service.UserAdminService;
@@ -37,21 +42,23 @@ public class BarangayConnectApplication {
     public static void main(String[] args) {
         ConnectionFactory connectionFactory = new DbConnection();
         UserRepo userRepo = new UserRepoImpl(connectionFactory);
+        ActivityLogRepo activityLogRepo = new ActivityLogRepoImpl(connectionFactory);
+        ActivityLogService activityLogService = new ActivityLogService(activityLogRepo);
         AuthService authService = new AuthService(userRepo);
         AuthController authController = new AuthController(authService);
 
         Scanner scanner = new Scanner(System.in);
         LoginView loginView = new LoginView(authController, scanner);
+        ResidentRepo residentRepo = new ResidentRepoImpl();
         ResidentManagementView residentManagementView = new ResidentManagementView(
                 scanner,
-                new ResidentController()
+                new ResidentController(new ResidentService(residentRepo), activityLogService)
         );
         HouseholdRepo householdRepo = new HouseholdRepoImpl(connectionFactory);
-        ResidentRepo residentRepo = new ResidentRepoImpl();
         HouseholdService householdService = new HouseholdService(householdRepo, residentRepo);
         HouseholdManagementView householdManagementView = new HouseholdManagementView(
                 scanner,
-                new HouseholdController(householdService)
+                new HouseholdController(householdService, activityLogService)
         );
         ServiceRequestRepo serviceRequestRepo = new ServiceRequestRepoImpl(connectionFactory);
         ServiceTypeRepo serviceTypeRepo = new ServiceTypeRepoImpl(connectionFactory);
@@ -62,7 +69,7 @@ public class BarangayConnectApplication {
         );
         ServiceRequestManagementView serviceRequestManagementView = new ServiceRequestManagementView(
                 scanner,
-                new ServiceRequestController(serviceRequestService)
+                new ServiceRequestController(serviceRequestService, activityLogService)
         );
         ReportRepo reportRepo = new ReportRepoImpl(connectionFactory);
         ReportView reportView = new ReportView(
@@ -71,11 +78,17 @@ public class BarangayConnectApplication {
         );
         ServiceTypeManagementView serviceTypeManagementView = new ServiceTypeManagementView(
                 scanner,
-                new ServiceTypeAdminController(new ServiceTypeAdminService(serviceTypeRepo))
+                new ServiceTypeAdminController(
+                        new ServiceTypeAdminService(serviceTypeRepo), activityLogService)
         );
         UserManagementView userManagementView = new UserManagementView(
                 scanner,
-                new UserAdminController(new UserAdminService(userRepo, residentRepo))
+                new UserAdminController(
+                        new UserAdminService(userRepo, residentRepo), activityLogService)
+        );
+        ActivityLogView activityLogView = new ActivityLogView(
+                scanner,
+                new ActivityLogController(activityLogService)
         );
         DashboardRouter dashboardRouter = new DashboardRouter(
                 new AdminDashboard(
@@ -85,7 +98,8 @@ public class BarangayConnectApplication {
                         serviceRequestManagementView,
                         reportView,
                         serviceTypeManagementView,
-                        userManagementView
+                        userManagementView,
+                        activityLogView
                 ),
                 new StaffDashboard(
                         scanner,

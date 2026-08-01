@@ -9,6 +9,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -135,14 +136,22 @@ public class UserRepoImpl implements UserRepo {
                 ) VALUES (?, ?, ?, ?, ?, ?, 0)
                 """;
         try (Connection connection = connectionFactory.openConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setObject(1, user.getResidentId());
             statement.setString(2, user.getUsername());
             statement.setString(3, user.getPasswordHash());
             statement.setString(4, user.getDisplayName());
             statement.setString(5, user.getRole().name());
             statement.setString(6, user.getAccountStatus().name());
-            return statement.executeUpdate() > 0;
+            if (statement.executeUpdate() == 0) {
+                return false;
+            }
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (keys.next()) {
+                    user.setUserId(keys.getInt(1));
+                }
+            }
+            return true;
         }
     }
 

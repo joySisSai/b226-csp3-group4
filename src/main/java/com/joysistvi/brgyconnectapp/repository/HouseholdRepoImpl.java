@@ -100,12 +100,20 @@ public class HouseholdRepoImpl implements HouseholdRepo {
                 ) VALUES (?, ?, ?, ?)
                 """;
         try (Connection connection = connectionFactory.openConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
+             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, household.getHouseholdCode());
             statement.setString(2, household.getAddressLine());
             statement.setString(3, household.getPurok());
             statement.setString(4, household.getHouseholdStatus().name());
-            return statement.executeUpdate() > 0;
+            if (statement.executeUpdate() == 0) {
+                return false;
+            }
+            try (ResultSet keys = statement.getGeneratedKeys()) {
+                if (keys.next()) {
+                    household.setHouseholdId(keys.getInt(1));
+                }
+            }
+            return true;
         }
     }
 

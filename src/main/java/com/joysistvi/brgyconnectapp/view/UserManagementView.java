@@ -39,11 +39,11 @@ public class UserManagementView {
             switch (choice) {
                 case "1" -> searchUsers();
                 case "2" -> viewUser();
-                case "3" -> createUser();
+                case "3" -> createUser(actingAdmin);
                 case "4" -> changeRole(actingAdmin);
                 case "5" -> changeStatus(actingAdmin);
-                case "6" -> unlockUser();
-                case "7" -> resetPassword();
+                case "6" -> unlockUser(actingAdmin);
+                case "7" -> resetPassword(actingAdmin);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -74,7 +74,7 @@ public class UserManagementView {
         printUserDetails(user);
     }
 
-    private void createUser() {
+    private void createUser(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create User Account");
 
@@ -95,7 +95,7 @@ public class UserManagementView {
             ConsoleUI.printInfo("Account creation cancelled.");
             return;
         }
-        printOperationResult(userController.create(user, password));
+        printOperationResult(userController.create(user, password, userId(actingAdmin)));
     }
 
     private void changeRole(User actingAdmin) {
@@ -144,7 +144,7 @@ public class UserManagementView {
         ));
     }
 
-    private void unlockUser() {
+    private void unlockUser(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Unlock User Account");
         int userId = promptPositiveInteger("User ID: ");
@@ -158,10 +158,10 @@ public class UserManagementView {
             ConsoleUI.printInfo("Unlock cancelled.");
             return;
         }
-        printOperationResult(userController.unlock(userId));
+        printOperationResult(userController.unlock(userId, userId(actingAdmin)));
     }
 
-    private void resetPassword() {
+    private void resetPassword(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Reset User Password");
         int userId = promptPositiveInteger("User ID: ");
@@ -181,7 +181,11 @@ public class UserManagementView {
             ConsoleUI.printInfo("Password reset cancelled.");
             return;
         }
-        printOperationResult(userController.resetPassword(userId, password));
+        printOperationResult(userController.resetPassword(userId, password, userId(actingAdmin)));
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private void printUsers(List<User> users) {

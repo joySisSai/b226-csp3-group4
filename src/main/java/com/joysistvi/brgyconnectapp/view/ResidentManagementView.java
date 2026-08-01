@@ -5,6 +5,7 @@ import com.joysistvi.brgyconnectapp.model.CivilStatus;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.ResidencyStatus;
 import com.joysistvi.brgyconnectapp.model.Sex;
+import com.joysistvi.brgyconnectapp.model.User;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -20,7 +21,7 @@ public class ResidentManagementView {
         this.residentController = residentController;
     }
 
-    public void show() {
+    public void show(User actingUser) {
         String choice;
         do {
             ConsoleUI.clearScreen();
@@ -40,9 +41,9 @@ public class ResidentManagementView {
                 case "1" -> listResidents();
                 case "2" -> searchResidents();
                 case "3" -> viewResident();
-                case "4" -> registerResident();
-                case "5" -> updateResident();
-                case "6" -> deactivateResident();
+                case "4" -> registerResident(actingUser);
+                case "5" -> updateResident(actingUser);
+                case "6" -> deactivateResident(actingUser);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -87,7 +88,7 @@ public class ResidentManagementView {
         printResidentDetails(resident);
     }
 
-    private void registerResident() {
+    private void registerResident(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Register Resident");
 
@@ -108,11 +109,11 @@ public class ResidentManagementView {
         resident.setHouseholdHead(promptYesNo("Household head? (Y/N): ", false, false));
         resident.setResidencyStatus(ResidencyStatus.ACTIVE);
 
-        String result = residentController.register(resident);
+        String result = residentController.register(resident, userId(actingUser));
         printOperationResult(result);
     }
 
-    private void updateResident() {
+    private void updateResident(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Update Resident");
         Integer residentId = promptPositiveInteger("Resident ID: ", false);
@@ -147,11 +148,11 @@ public class ResidentManagementView {
         resident.setResidencyStatus(promptEnum("Residency status", ResidencyStatus.values(), true,
                 resident.getResidencyStatus()));
 
-        String result = residentController.update(resident);
+        String result = residentController.update(resident, userId(actingUser));
         printOperationResult(result);
     }
 
-    private void deactivateResident() {
+    private void deactivateResident(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Deactivate Resident");
         Integer residentId = promptPositiveInteger("Resident ID: ", false);
@@ -175,8 +176,12 @@ public class ResidentManagementView {
             return;
         }
 
-        String result = residentController.deactivate(residentId);
+        String result = residentController.deactivate(residentId, userId(actingUser));
         printOperationResult(result);
+    }
+
+    private int userId(User user) {
+        return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
     private void printResidents(List<Resident> residents) {
