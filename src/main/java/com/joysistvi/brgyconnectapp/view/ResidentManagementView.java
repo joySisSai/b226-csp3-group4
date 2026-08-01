@@ -6,11 +6,13 @@ import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.ResidencyStatus;
 import com.joysistvi.brgyconnectapp.model.Sex;
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.validation.ResidentFieldValidator;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.Function;
 
 public class ResidentManagementView {
     private final Scanner scanner;
@@ -101,8 +103,10 @@ public class ResidentManagementView {
         resident.setBirthDate(promptDate("Birth date (YYYY-MM-DD): ", false, null));
         resident.setSex(promptEnum("Sex", Sex.values(), false, null));
         resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
-        resident.setContactNumber(promptOptional("Contact number (optional): "));
-        resident.setEmail(promptOptional("Email (optional): "));
+        resident.setContactNumber(promptValidatedOptional(
+                "Contact number (optional)", null, ResidentFieldValidator::validateContactNumber));
+        resident.setEmail(promptValidatedOptional(
+                "Email (optional)", null, ResidentFieldValidator::validateEmail));
         resident.setOccupation(promptOptional("Occupation (optional): "));
         resident.setHouseholdId(promptPositiveInteger("Household ID (optional): ", true));
         resident.setRegisteredVoter(promptYesNo("Registered voter? (Y/N): ", false, false));
@@ -133,8 +137,10 @@ public class ResidentManagementView {
         resident.setSex(promptEnum("Sex", Sex.values(), true, resident.getSex()));
         resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), true,
                 resident.getCivilStatus()));
-        resident.setContactNumber(promptTextUpdate("Contact number", resident.getContactNumber(), false));
-        resident.setEmail(promptTextUpdate("Email", resident.getEmail(), false));
+        resident.setContactNumber(promptValidatedOptional(
+                "Contact number", resident.getContactNumber(), ResidentFieldValidator::validateContactNumber));
+        resident.setEmail(promptValidatedOptional(
+                "Email", resident.getEmail(), ResidentFieldValidator::validateEmail));
         resident.setOccupation(promptTextUpdate("Occupation", resident.getOccupation(), false));
         resident.setHouseholdId(promptIntegerUpdate("Household ID", resident.getHouseholdId()));
         resident.setRegisteredVoter(promptYesNo(
@@ -252,6 +258,27 @@ public class ResidentManagementView {
         }
     }
 
+    private String promptValidatedOptional(
+            String label,
+            String currentValue,
+            Function<String, String> validator) {
+        while (true) {
+            String current = currentValue == null ? "" : " [" + currentValue + "]";
+            ConsoleUI.printPrompt(label + current + ": ");
+            String input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                return currentValue;
+            }
+
+            String value = ResidentFieldValidator.normalizeOptional(input);
+            String validationError = validator.apply(value);
+            if (validationError == null) {
+                return value;
+            }
+            ConsoleUI.printError(validationError + ".");
+        }
+    }
+
     private Integer promptPositiveInteger(String label, boolean optional) {
         while (true) {
             ConsoleUI.printPrompt(label);
@@ -298,8 +325,9 @@ public class ResidentManagementView {
             }
             try {
                 LocalDate date = LocalDate.parse(input);
-                if (date.isAfter(LocalDate.now())) {
-                    ConsoleUI.printError("Birth date cannot be in the future.");
+                String validationError = ResidentFieldValidator.validateBirthDate(date);
+                if (validationError != null) {
+                    ConsoleUI.printError(validationError + ".");
                     continue;
                 }
                 return date;

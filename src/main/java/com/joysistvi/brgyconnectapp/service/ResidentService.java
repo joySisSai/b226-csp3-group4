@@ -2,9 +2,9 @@ package com.joysistvi.brgyconnectapp.service;
 
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
+import com.joysistvi.brgyconnectapp.validation.ResidentFieldValidator;
 
 import java.sql.SQLException;
-import java.time.LocalDate;
 import java.util.List;
 
 public class ResidentService {
@@ -148,14 +148,26 @@ public class ResidentService {
                 isBlank(resident.getLastName())) {
             return "Resident code, first name, and last name are required";
         }
-        if (resident.getBirthDate() == null ||
-                resident.getSex() == null ||
+        if (resident.getSex() == null ||
                 resident.getCivilStatus() == null ||
                 resident.getResidencyStatus() == null) {
-            return "Birth date, sex, civil status, and residency status are required";
+            return "Sex, civil status, and residency status are required";
         }
-        if (resident.getBirthDate().isAfter(LocalDate.now())) {
-            return "Birth date cannot be in the future";
+        String birthDateError = ResidentFieldValidator.validateBirthDate(resident.getBirthDate());
+        if (birthDateError != null) {
+            return birthDateError;
+        }
+
+        resident.setContactNumber(ResidentFieldValidator.normalizeOptional(resident.getContactNumber()));
+        String contactNumberError = ResidentFieldValidator.validateContactNumber(resident.getContactNumber());
+        if (contactNumberError != null) {
+            return contactNumberError;
+        }
+
+        resident.setEmail(ResidentFieldValidator.normalizeOptional(resident.getEmail()));
+        String emailError = ResidentFieldValidator.validateEmail(resident.getEmail());
+        if (emailError != null) {
+            return emailError;
         }
         if (resident.getHouseholdId() != null && resident.getHouseholdId() <= 0) {
             return "Household ID must be a positive whole number";
