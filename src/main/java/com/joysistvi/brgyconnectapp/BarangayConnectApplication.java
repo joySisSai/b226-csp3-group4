@@ -1,6 +1,7 @@
 package com.joysistvi.brgyconnectapp;
 
 import com.joysistvi.brgyconnectapp.config.ConnectionFactory;
+import com.joysistvi.brgyconnectapp.config.DatabaseConfig;
 import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
 import com.joysistvi.brgyconnectapp.controller.ActivityLogController;
@@ -36,12 +37,32 @@ import com.joysistvi.brgyconnectapp.service.ServiceTypeAdminService;
 import com.joysistvi.brgyconnectapp.service.UserAdminService;
 import com.joysistvi.brgyconnectapp.view.*;
 
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.Set;
 
 public class BarangayConnectApplication {
+    private static final Set<String> REQUIRED_TABLES = Set.of(
+            "users",
+            "residents",
+            "households",
+            "service_types",
+            "service_requests",
+            "request_status_history",
+            "activity_logs"
+    );
+
     public static void main(String[] args) {
-        ConnectionFactory connectionFactory = new DbConnection();
+        ConnectionFactory connectionFactory = initializeDatabase();
+        if (connectionFactory == null) {
+            return;
+        }
         UserRepo userRepo = new UserRepoImpl(connectionFactory);
         AuthorizationService authorizationService = new AuthorizationService(userRepo);
         ActivityLogRepo activityLogRepo = new ActivityLogRepoImpl(connectionFactory);
@@ -52,7 +73,7 @@ public class BarangayConnectApplication {
 
         Scanner scanner = new Scanner(System.in);
         LoginView loginView = new LoginView(authController, scanner);
-        ResidentRepo residentRepo = new ResidentRepoImpl();
+        ResidentRepo residentRepo = new ResidentRepoImpl(connectionFactory);
         ResidentController residentController = new ResidentController(
                 new ResidentService(residentRepo, authorizationService), activityLogService);
         ResidentManagementView residentManagementView = new ResidentManagementView(
@@ -127,6 +148,45 @@ public class BarangayConnectApplication {
             }
 
             dashboardRouter.showDashboard(authenticatedUser.get());
+        }
+    }
+
+    private static ConnectionFactory initializeDatabase() {
+        try {
+            DbConnection connectionFactory = new DbConnection(DatabaseConfig.load());
+            try (Connection connection = connectionFactory.openConnection()) {
+                if (!connection.isValid(3)) {
+                    throw new SQLException("Database connection validation failed");
+                }
+                validateSchema(connection);
+            }
+            return connectionFactory;
+        } catch (IllegalStateException exception) {
+            System.err.println("Application startup failed: " + exception.getMessage());
+            System.err.println("Configure the project .env file or set BARANGAYCONNECT_DB_URL, " +
+                    "BARANGAYCONNECT_DB_USERNAME, and optionally BARANGAYCONNECT_DB_PASSWORD.");
+            return null;
+        } catch (SQLException exception) {
+            System.err.println("Application startup failed: unable to connect to the database.");
+            System.err.println("Verify the database server, schema, and configured credentials.");
+            return null;
+        }
+    }
+
+    private static void validateSchema(Connection connection) throws SQLException {
+        DatabaseMetaData metadata = connection.getMetaData();
+        Set<String> availableTables = new HashSet<>();
+        try (ResultSet tables = metadata.getTables(
+                connection.getCatalog(), null, "%", new String[]{"TABLE"})) {
+            while (tables.next()) {
+                availableTables.add(tables.getString("TABLE_NAME").toLowerCase(Locale.ROOT));
+            }
+        }
+
+        if (!availableTables.containsAll(REQUIRED_TABLES)) {
+            Set<String> missingTables = new HashSet<>(REQUIRED_TABLES);
+            missingTables.removeAll(availableTables);
+            throw new SQLException("Missing required database tables: " + missingTables);
         }
     }
 }

@@ -10,11 +10,6 @@ public class ResidentController {
     private final ResidentService service;
     private final ActivityLogService activityLogService;
 
-    public ResidentController() {
-        this.service = new ResidentService();
-        this.activityLogService = null;
-    }
-
     public ResidentController(ResidentService service) {
         this.service = service;
         this.activityLogService = null;

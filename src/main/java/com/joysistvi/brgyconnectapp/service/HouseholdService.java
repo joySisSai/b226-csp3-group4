@@ -32,7 +32,7 @@ public class HouseholdService {
         try {
             return householdRepo.getAll();
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -46,7 +46,7 @@ public class HouseholdService {
         try {
             return householdRepo.getById(householdId).orElse(null);
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 
@@ -60,7 +60,7 @@ public class HouseholdService {
         try {
             return householdRepo.search(keyword.trim());
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -74,7 +74,7 @@ public class HouseholdService {
         try {
             return householdRepo.getMembers(householdId);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -96,7 +96,9 @@ public class HouseholdService {
                     ? "Household created successfully"
                     : "Failed to create household";
         } catch (SQLException exception) {
-            return DATABASE_ERROR;
+            return DatabaseErrors.isConstraintViolation(exception)
+                    ? "Household code already exists"
+                    : DATABASE_ERROR;
         }
     }
 

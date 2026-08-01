@@ -45,7 +45,7 @@ public class AuthorizationService {
             User user = userRepo.findById(userId).orElse(null);
             return user != null && user.getAccountStatus() == AccountStatus.ACTIVE ? user : null;
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 }

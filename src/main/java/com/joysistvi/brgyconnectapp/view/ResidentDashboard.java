@@ -3,6 +3,7 @@ package com.joysistvi.brgyconnectapp.view;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.service.DataAccessException;
 
 import java.util.Scanner;
 
@@ -28,21 +29,25 @@ public class ResidentDashboard {
             ConsoleUI.printPrompt("Select option: ");
             choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1":
-                    viewMyProfile(user);
-                    break;
-                case "2":
-                    //new SubmitServiceRequestView(scanner).show(user);
-                    break;
-                case "3":
-                    ConsoleUI.printInfo("Feature coming soon");
-                    break;
-                case "0":
-                    ConsoleUI.printSuccess("Logged out");
-                    break;
-                default:
-                    ConsoleUI.printError("Invalid choice");
+            try {
+                switch (choice) {
+                    case "1":
+                        viewMyProfile(user);
+                        break;
+                    case "2":
+                        //new SubmitServiceRequestView(scanner).show(user);
+                        break;
+                    case "3":
+                        ConsoleUI.printInfo("Feature coming soon");
+                        break;
+                    case "0":
+                        ConsoleUI.printSuccess("Logged out");
+                        break;
+                    default:
+                        ConsoleUI.printError("Invalid choice");
+                }
+            } catch (DataAccessException exception) {
+                ConsoleUI.printError(exception.getMessage());
             }
             if (!choice.equals("0")) {
                 ConsoleUI.printPrompt("\nPress Enter to continue...");

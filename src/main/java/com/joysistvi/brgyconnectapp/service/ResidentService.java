@@ -2,19 +2,16 @@ package com.joysistvi.brgyconnectapp.service;
 
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
-import com.joysistvi.brgyconnectapp.repository.ResidentRepoImpl;
 
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
 
 public class ResidentService {
+    private static final String DATABASE_ERROR =
+            "Unable to complete the operation because the database is unavailable";
     private final ResidentRepo repo;
     private final AuthorizationService authorizationService;
-
-    public ResidentService() {
-        this.repo = new ResidentRepoImpl();
-        this.authorizationService = null;
-    }
 
     public ResidentService(ResidentRepo repo, AuthorizationService authorizationService) {
         this.repo = repo;
@@ -22,22 +19,48 @@ public class ResidentService {
     }
 
     public List<Resident> getAllResidents(int actingUserId) {
-        return canManage(actingUserId) ? repo.getAll() : List.of();
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
+        try {
+            return repo.getAll();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
     }
 
     public Resident getResidentById(int id, int actingUserId) {
-        return canManage(actingUserId) ? repo.getById(id).orElse(null) : null;
+        if (!canManage(actingUserId)) {
+            return null;
+        }
+        try {
+            return repo.getById(id).orElse(null);
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
     }
 
     public Resident getOwnResidentProfile(int residentId, int actingUserId) {
-        return authorizationService != null &&
-                authorizationService.canViewOwnResidentProfile(actingUserId, residentId)
-                ? repo.getById(residentId).orElse(null)
-                : null;
+        if (authorizationService == null ||
+                !authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return null;
+        }
+        try {
+            return repo.getById(residentId).orElse(null);
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
     }
 
     public List<Resident> getAllActive(int actingUserId) {
-        return canManage(actingUserId) ? repo.getAllActive() : List.of();
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
+        try {
+            return repo.getAllActive();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
     }
 
     // Add resident — checks for required fields and duplicate codes
@@ -50,13 +73,18 @@ public class ResidentService {
             return validationError;
         }
 
-        if (repo.getByCode(resident.getResidentCode().trim()).isPresent()) {
-            return "Resident code already exists";
+        try {
+            if (repo.getByCode(resident.getResidentCode().trim()).isPresent()) {
+                return "Resident code already exists";
+            }
+            return repo.save(resident)
+                    ? "Resident added successfully"
+                    : "Failed to add resident";
+        } catch (SQLException exception) {
+            return DatabaseErrors.isConstraintViolation(exception)
+                    ? "Resident code already exists"
+                    : DATABASE_ERROR;
         }
-
-        return repo.save(resident)
-                ? "Resident added successfully"
-                : "Failed to add resident";
     }
 
     public List<Resident> searchResidents(String keyword, int actingUserId) {
@@ -67,7 +95,11 @@ public class ResidentService {
             return List.of();
         }
 
-        return repo.searchByNameOrCode(keyword.trim());
+        try {
+            return repo.searchByNameOrCode(keyword.trim());
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
     }
 
     // Update resident — validates that the ID is valid
@@ -82,7 +114,15 @@ public class ResidentService {
         if (validationError != null) {
             return validationError;
         }
-        return repo.update(resident) ? "Resident updated successfully" : "Failed to update resident";
+        try {
+            return repo.update(resident)
+                    ? "Resident updated successfully"
+                    : "Failed to update resident";
+        } catch (SQLException exception) {
+            return DatabaseErrors.isConstraintViolation(exception)
+                    ? "Resident code already exists"
+                    : DATABASE_ERROR;
+        }
     }
     // Deactivate resident - soft delete
     public String deactivateResident(int id, int actingUserId) {
@@ -90,7 +130,13 @@ public class ResidentService {
             return AuthorizationService.STAFF_ACCESS_DENIED;
         }
         if (id <= 0) return "Invalid resident ID";
-        return repo.deactivate(id) ? "Resident marked as inactive" : "Failed to update status";
+        try {
+            return repo.deactivate(id)
+                    ? "Resident marked as inactive"
+                    : "Failed to update status";
+        } catch (SQLException exception) {
+            return DATABASE_ERROR;
+        }
     }
 
     private String validateResident(Resident resident) {

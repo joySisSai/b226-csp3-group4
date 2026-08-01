@@ -1,6 +1,7 @@
 package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.service.DataAccessException;
 
 import java.util.Scanner;
 
@@ -55,22 +56,27 @@ public class AdminDashboard {
             ConsoleUI.printPrompt("Choose an option: ");
             choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1" -> residentManagementView.show(user);
-                case "2" -> householdManagementView.show(user);
-                case "3" -> serviceRequestManagementView.searchRequests(user);
-                case "4" -> serviceRequestManagementView.createRequest(user);
-                case "5" -> serviceRequestManagementView.updateRequestStatus(user);
-                case "6" -> serviceRequestManagementView.viewRequestHistory(user);
-                case "7" -> reportView.show(user);
-                case "8" -> serviceTypeManagementView.show(user);
-                case "9" -> userManagementView.show(user);
-                case "10" -> activityLogView.show(user);
-                case "0" -> { }
-                default -> {
-                    ConsoleUI.printError("Please choose a valid menu option.");
-                    pause();
+            try {
+                switch (choice) {
+                    case "1" -> residentManagementView.show(user);
+                    case "2" -> householdManagementView.show(user);
+                    case "3" -> serviceRequestManagementView.searchRequests(user);
+                    case "4" -> serviceRequestManagementView.createRequest(user);
+                    case "5" -> serviceRequestManagementView.updateRequestStatus(user);
+                    case "6" -> serviceRequestManagementView.viewRequestHistory(user);
+                    case "7" -> reportView.show(user);
+                    case "8" -> serviceTypeManagementView.show(user);
+                    case "9" -> userManagementView.show(user);
+                    case "10" -> activityLogView.show(user);
+                    case "0" -> { }
+                    default -> {
+                        ConsoleUI.printError("Please choose a valid menu option.");
+                        pause();
+                    }
                 }
+            } catch (DataAccessException exception) {
+                ConsoleUI.printError(exception.getMessage());
+                pause();
             }
         } while (!choice.equals("0"));
 

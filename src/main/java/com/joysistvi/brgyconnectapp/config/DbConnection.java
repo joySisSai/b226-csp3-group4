@@ -5,16 +5,18 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DbConnection implements ConnectionFactory {
-    private final static String URL = "jdbc:mysql://localhost:3306/barangayconnect_db";
-    private final static String USERNAME = "root";
-    private final static String PASSWORD = "";
+    private final DatabaseConfig databaseConfig;
 
-    public Connection connect() throws SQLException {
-        return DriverManager.getConnection(URL, USERNAME, PASSWORD);
+    public DbConnection(DatabaseConfig databaseConfig) {
+        this.databaseConfig = databaseConfig;
     }
 
     @Override
     public Connection openConnection() throws SQLException {
-        return connect();
+        return DriverManager.getConnection(
+                databaseConfig.url(),
+                databaseConfig.username(),
+                databaseConfig.password()
+        );
     }
 }

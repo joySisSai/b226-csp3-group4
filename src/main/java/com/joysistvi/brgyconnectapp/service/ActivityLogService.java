@@ -35,8 +35,13 @@ public class ActivityLogService {
         activityLog.setEntityId(entityId != null && entityId > 0 ? entityId : null);
         activityLog.setDescription(normalizeDescription(description));
         try {
-            return activityLogRepo.save(activityLog);
+            boolean saved = activityLogRepo.save(activityLog);
+            if (!saved) {
+                System.err.println("Warning: the activity log entry could not be recorded.");
+            }
+            return saved;
         } catch (SQLException exception) {
+            System.err.println("Warning: the activity log entry could not be recorded.");
             return false;
         }
     }
@@ -63,7 +68,7 @@ public class ActivityLogService {
                     MAXIMUM_RESULTS
             );
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -74,7 +79,7 @@ public class ActivityLogService {
         try {
             return activityLogRepo.getById(activityLogId).orElse(null);
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 

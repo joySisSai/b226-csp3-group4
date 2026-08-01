@@ -30,7 +30,7 @@ public class ServiceTypeAdminService {
         try {
             return serviceTypeRepo.getAll();
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -44,7 +44,7 @@ public class ServiceTypeAdminService {
         try {
             return serviceTypeRepo.getById(serviceTypeId).orElse(null);
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 
@@ -67,7 +67,9 @@ public class ServiceTypeAdminService {
                     ? "Service type created successfully"
                     : "Failed to create service type";
         } catch (SQLException exception) {
-            return DATABASE_ERROR;
+            return DatabaseErrors.isConstraintViolation(exception)
+                    ? "Service code already exists"
+                    : DATABASE_ERROR;
         }
     }
 

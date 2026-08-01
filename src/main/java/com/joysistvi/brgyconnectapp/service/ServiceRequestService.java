@@ -43,7 +43,7 @@ public class ServiceRequestService {
         try {
             return requestRepo.getRecent(MAXIMUM_RESULTS);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -57,7 +57,7 @@ public class ServiceRequestService {
         try {
             return requestRepo.search(keyword.trim(), MAXIMUM_RESULTS);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -71,7 +71,7 @@ public class ServiceRequestService {
         try {
             return requestRepo.getById(requestId).orElse(null);
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 
@@ -85,7 +85,7 @@ public class ServiceRequestService {
         try {
             return requestRepo.getStatusHistory(requestId);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -96,7 +96,7 @@ public class ServiceRequestService {
         try {
             return serviceTypeRepo.getAllActive();
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 

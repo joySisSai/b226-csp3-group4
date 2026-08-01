@@ -26,7 +26,7 @@ public class ReportService {
         try {
             return reportRepo.getResidentSummary(normalizeFilter(purok));
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -37,7 +37,7 @@ public class ReportService {
         try {
             return reportRepo.getHouseholdSummary(normalizeFilter(purok));
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -54,7 +54,7 @@ public class ReportService {
         try {
             return reportRepo.getServiceRequestSummary(startDate, endDate, status);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 

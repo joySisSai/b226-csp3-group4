@@ -40,7 +40,7 @@ public class UserAdminService {
         try {
             return userRepo.getAll();
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -54,7 +54,7 @@ public class UserAdminService {
         try {
             return userRepo.search(keyword.trim(), MAXIMUM_RESULTS);
         } catch (SQLException exception) {
-            return List.of();
+            throw new DataAccessException(exception);
         }
     }
 
@@ -68,7 +68,7 @@ public class UserAdminService {
         try {
             return userRepo.findById(userId).orElse(null);
         } catch (SQLException exception) {
-            return null;
+            throw new DataAccessException(exception);
         }
     }
 
@@ -110,7 +110,10 @@ public class UserAdminService {
             user.setPasswordHash(null);
             return saved ? "User account created successfully" : "Failed to create user account";
         } catch (SQLException exception) {
-            return DATABASE_ERROR;
+            user.setPasswordHash(null);
+            return DatabaseErrors.isConstraintViolation(exception)
+                    ? "Username or linked resident account already exists"
+                    : DATABASE_ERROR;
         } finally {
             clearPassword(password);
         }

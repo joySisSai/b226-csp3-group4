@@ -1,7 +1,6 @@
 package com.joysistvi.brgyconnectapp.repository;
 
 import com.joysistvi.brgyconnectapp.config.ConnectionFactory;
-import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.model.CivilStatus;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.ResidencyStatus;
@@ -14,25 +13,27 @@ import java.util.List;
 import java.util.Optional;
 
 public class ResidentRepoImpl implements ResidentRepo {
-    private final ConnectionFactory dbFactory = new DbConnection();
+    private final ConnectionFactory dbFactory;
+
+    public ResidentRepoImpl(ConnectionFactory dbFactory) {
+        this.dbFactory = dbFactory;
+    }
 
     // Get all residents with proper error logging
     @Override
-    public List<Resident> getAll() {
+    public List<Resident> getAll() throws SQLException {
         List<Resident> list = new ArrayList<>();
         String sql = "SELECT * FROM residents ORDER BY last_name, first_name";
         try (Connection conn = dbFactory.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapToResident(rs));
-        } catch (SQLException e) {
-            System.err.println("Error fetching residents: " + e.getMessage());
         }
         return list;
     }
 
     @Override
-    public List<Resident> getAllActive() {
+    public List<Resident> getAllActive() throws SQLException {
         List<Resident> residents = new ArrayList<>();
         String sql = """
         SELECT *
@@ -48,8 +49,6 @@ public class ResidentRepoImpl implements ResidentRepo {
             while (rs.next()) {
                 residents.add(mapToResident(rs));
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching active residents: " + e.getMessage());
         }
 
         return residents;
@@ -57,37 +56,31 @@ public class ResidentRepoImpl implements ResidentRepo {
 
     // Get one resident using their primary key ID
     @Override
-    public Optional<Resident> getById(int id) {
+    public Optional<Resident> getById(int id) throws SQLException {
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM residents WHERE resident_id = ?")) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(mapToResident(rs)) : Optional.empty();
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching resident by ID: " + e.getMessage());
         }
-        return Optional.empty();
     }
 
     // Get one resident using their unique resident code
     @Override
-    public Optional<Resident> getByCode(String code) {
+    public Optional<Resident> getByCode(String code) throws SQLException {
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM residents WHERE resident_code = ?")) {
             stmt.setString(1, code);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(mapToResident(rs)) : Optional.empty();
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching resident by code: " + e.getMessage());
         }
-        return Optional.empty();
     }
 
     // Search for residents — matches first name, last name, or resident code
     @Override
-    public List<Resident> searchByNameOrCode(String keyword) {
+    public List<Resident> searchByNameOrCode(String keyword) throws SQLException {
         List<Resident> list = new ArrayList<>();
         String sql = """
             SELECT * FROM residents 
@@ -105,15 +98,13 @@ public class ResidentRepoImpl implements ResidentRepo {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) list.add(mapToResident(rs));
             }
-        } catch (SQLException e) {
-            System.err.println("Error searching residents: " + e.getMessage());
         }
         return list;
     }
 
     // Save new resident — first checks if the code already exists to avoid duplicates
     @Override
-    public boolean save(Resident resident) {
+    public boolean save(Resident resident) throws SQLException {
         if (getByCode(resident.getResidentCode()).isPresent()) return false;
         String sql = """
             INSERT INTO residents (
@@ -148,15 +139,12 @@ public class ResidentRepoImpl implements ResidentRepo {
                 }
             }
             return true;
-        } catch (SQLException e) {
-            System.err.println("Save error: " + e.getMessage());
         }
-        return false;
     }
 
     // Update an existing resident's information
     @Override
-    public boolean update(Resident resident) {
+    public boolean update(Resident resident) throws SQLException {
         String sql = """
         UPDATE residents SET
             resident_code = ?,
@@ -199,24 +187,18 @@ public class ResidentRepoImpl implements ResidentRepo {
             stmt.setInt(16, resident.getResidentId());
 
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Error updating resident: " + e.getMessage());
         }
-        return false;
     }
 
     /// Soft delete: set status to INACTIVE instead of removing record
     @Override
-    public boolean deactivate(int id) {
+    public boolean deactivate(int id) throws SQLException {
         String sql = "UPDATE residents SET residency_status = 'INACTIVE', updated_at = NOW() WHERE resident_id = ?";
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Deactivate error: " + e.getMessage());
         }
-        return false;
     }
 
     // Convert database result row into a Resident object
