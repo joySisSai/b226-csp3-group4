@@ -5,15 +5,21 @@ import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
 import com.joysistvi.brgyconnectapp.controller.HouseholdController;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
+import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepo;
 import com.joysistvi.brgyconnectapp.repository.HouseholdRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepoImpl;
+import com.joysistvi.brgyconnectapp.repository.ServiceRequestRepo;
+import com.joysistvi.brgyconnectapp.repository.ServiceRequestRepoImpl;
+import com.joysistvi.brgyconnectapp.repository.ServiceTypeRepo;
+import com.joysistvi.brgyconnectapp.repository.ServiceTypeRepoImpl;
 import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.repository.UserRepoImpl;
 import com.joysistvi.brgyconnectapp.service.AuthService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
+import com.joysistvi.brgyconnectapp.service.ServiceRequestService;
 import com.joysistvi.brgyconnectapp.view.*;
 
 import java.util.Optional;
@@ -39,9 +45,30 @@ public class BarangayConnectApplication {
                 scanner,
                 new HouseholdController(householdService)
         );
+        ServiceRequestRepo serviceRequestRepo = new ServiceRequestRepoImpl(connectionFactory);
+        ServiceTypeRepo serviceTypeRepo = new ServiceTypeRepoImpl(connectionFactory);
+        ServiceRequestService serviceRequestService = new ServiceRequestService(
+                serviceRequestRepo,
+                serviceTypeRepo,
+                residentRepo
+        );
+        ServiceRequestManagementView serviceRequestManagementView = new ServiceRequestManagementView(
+                scanner,
+                new ServiceRequestController(serviceRequestService)
+        );
         DashboardRouter dashboardRouter = new DashboardRouter(
-                new AdminDashboard(scanner, residentManagementView, householdManagementView),
-                new StaffDashboard(scanner, residentManagementView, householdManagementView),
+                new AdminDashboard(
+                        scanner,
+                        residentManagementView,
+                        householdManagementView,
+                        serviceRequestManagementView
+                ),
+                new StaffDashboard(
+                        scanner,
+                        residentManagementView,
+                        householdManagementView,
+                        serviceRequestManagementView
+                ),
                 new ResidentDashboard(scanner)
         );
 

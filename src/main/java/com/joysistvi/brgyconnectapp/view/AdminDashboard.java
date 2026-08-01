@@ -8,13 +8,16 @@ public class AdminDashboard {
     private final Scanner scanner;
     private final ResidentManagementView residentManagementView;
     private final HouseholdManagementView householdManagementView;
+    private final ServiceRequestManagementView serviceRequestManagementView;
 
     public AdminDashboard(Scanner scanner,
                           ResidentManagementView residentManagementView,
-                          HouseholdManagementView householdManagementView) {
+                          HouseholdManagementView householdManagementView,
+                          ServiceRequestManagementView serviceRequestManagementView) {
         this.scanner = scanner;
         this.residentManagementView = residentManagementView;
         this.householdManagementView = householdManagementView;
+        this.serviceRequestManagementView = serviceRequestManagementView;
     }
 
     public void show(User user) {
@@ -25,7 +28,7 @@ public class AdminDashboard {
             ConsoleUI.printSubHeader("Staff Operations");
             ConsoleUI.printMenuOption("1", "Manage resident records");
             ConsoleUI.printMenuOption("2", "Manage household records");
-            ConsoleUI.printMenuOption("3", "Search records");
+            ConsoleUI.printMenuOption("3", "Search service requests");
             ConsoleUI.printMenuOption("4", "Create service request");
             ConsoleUI.printMenuOption("5", "Update request status");
             ConsoleUI.printMenuOption("6", "View request history");
@@ -43,7 +46,11 @@ public class AdminDashboard {
             switch (choice) {
                 case "1" -> residentManagementView.show();
                 case "2" -> householdManagementView.show();
-                case "3", "4", "5", "6", "7", "8", "9", "10" -> showComingSoon();
+                case "3" -> serviceRequestManagementView.searchRequests();
+                case "4" -> serviceRequestManagementView.createRequest(user);
+                case "5" -> serviceRequestManagementView.updateRequestStatus(user);
+                case "6" -> serviceRequestManagementView.viewRequestHistory();
+                case "7", "8", "9", "10" -> showComingSoon();
                 case "0" -> { }
                 default -> {
                     ConsoleUI.printError("Please choose a valid menu option.");
