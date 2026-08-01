@@ -125,19 +125,47 @@ public class ResidentRepoImpl implements ResidentRepo {
     // Update an existing resident's information
     @Override
     public boolean update(Resident resident) {
-        String sql = "UPDATE residents SET resident_code=?, first_name=?, middle_name=?, last_name=?, birth_date=?, sex=?, civil_status=?, residency_status=?, contact_number=? WHERE resident_id=?";
+        String sql = """
+        UPDATE residents SET
+            resident_code = ?,
+            first_name = ?,
+            middle_name = ?,
+            last_name = ?,
+            suffix = ?,
+            birth_date = ?,
+            sex = ?,
+            civil_status = ?,
+            residency_status = ?,
+            contact_number = ?,
+            email = ?,
+            household_id = ?,
+            occupation = ?,
+            is_registered_voter = ?,
+            is_household_head = ?,
+            updated_at = NOW()
+        WHERE resident_id = ?
+        """;
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            // Set values in EXACT order matching the SQL above
             stmt.setString(1, resident.getResidentCode());
             stmt.setString(2, resident.getFirstName());
             stmt.setString(3, resident.getMiddleName());
             stmt.setString(4, resident.getLastName());
-            stmt.setDate(5, Date.valueOf(resident.getBirthDate()));
-            stmt.setString(6, resident.getSex().name());
-            stmt.setString(7, resident.getCivilStatus().name());
-            stmt.setString(8, resident.getResidencyStatus().name());
-            stmt.setString(9, resident.getContactNumber());
-            stmt.setInt(10, resident.getResidentId());
+            stmt.setString(5, resident.getSuffix());
+            stmt.setDate(6, Date.valueOf(resident.getBirthDate()));
+            stmt.setString(7, resident.getSex().name());
+            stmt.setString(8, resident.getCivilStatus().name());
+            stmt.setString(9, resident.getResidencyStatus().name());
+            stmt.setString(10, resident.getContactNumber());
+            stmt.setString(11, resident.getEmail());
+            stmt.setObject(12, resident.getHouseholdId());
+            stmt.setString(13, resident.getOccupation());
+            stmt.setBoolean(14, resident.isRegisteredVoter());
+            stmt.setBoolean(15, resident.isHouseholdHead());
+            stmt.setInt(16, resident.getResidentId());
+
             return stmt.executeUpdate() > 0;
         } catch (SQLException e) {
             System.err.println("Error updating resident: " + e.getMessage());
@@ -162,24 +190,30 @@ public class ResidentRepoImpl implements ResidentRepo {
     // Convert database result row into a Resident object
     private Resident mapToResident(ResultSet rs) throws SQLException {
         Resident r = new Resident();
-        r.setResidentId(rs.getInt("resident_id"));
+        r.setResidentId(rs.getObject("resident_id", Integer.class));
         r.setResidentCode(rs.getString("resident_code"));
         r.setHouseholdId(rs.getObject("household_id", Integer.class));
-        r.setSuffix(rs.getString("suffix"));
         r.setFirstName(rs.getString("first_name"));
         r.setMiddleName(rs.getString("middle_name"));
         r.setLastName(rs.getString("last_name"));
+        r.setSuffix(rs.getString("suffix"));
         r.setBirthDate(rs.getDate("birth_date").toLocalDate());
         r.setSex(Sex.valueOf(rs.getString("sex")));
         r.setCivilStatus(CivilStatus.valueOf(rs.getString("civil_status")));
-        r.setResidencyStatus(ResidencyStatus.valueOf(rs.getString("residency_status")));
+        r.setContactNumber(rs.getString("contact_number"));
         r.setEmail(rs.getString("email"));
         r.setOccupation(rs.getString("occupation"));
-        r.setRegisteredVoter(rs.getBoolean("is_registered_voter"));
-        r.setHouseholdHead(rs.getBoolean("is_household_head"));
-        r.setContactNumber(rs.getString("contact_number"));
-        r.setDateRegistered(rs.getDate("date_registered") != null ? rs.getDate("date_registered").toLocalDate() : null);
-        r.setUpdatedAt(rs.getTimestamp("updated_at") != null ? LocalDateTime.from(rs.getTimestamp("updated_at").toLocalDateTime().toLocalDate()) : null);
+        r.setRegisteredVoter(rs.getBoolean("registered_voter"));
+        r.setHouseholdHead(rs.getBoolean("household_head"));
+        r.setResidencyStatus(ResidencyStatus.valueOf(rs.getString("residency_status")));
+        r.setDateRegistered(rs.getDate("date_registered").toLocalDate());
+
+        Timestamp created = rs.getTimestamp("created_at");
+        if (created != null) r.setCreatedAt(created.toLocalDateTime());
+
+        Timestamp updated = rs.getTimestamp("updated_at");
+        if (updated != null) r.setUpdatedAt(updated.toLocalDateTime());
+
         return r;
     }
 }

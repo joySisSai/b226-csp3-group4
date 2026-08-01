@@ -14,8 +14,11 @@ public class ResidentService {
 
     // Add resident — checks for required fields and duplicate codes
     public String addResident(Resident resident) {
-        if (resident.getResidentCode().isBlank() || resident.getFirstName().isBlank() || resident.getLastName().isBlank())
-            return "Required fields cannot be empty";
+        if (resident.getResidentCode().isBlank() || resident.getFirstName().isBlank()
+                || resident.getLastName().isBlank() || resident.getContactNumber().isBlank())
+            return "Resident Code, Name, and Contact are required";
+        if (resident.getBirthDate() == null)
+            return "Birth date is required";
         if (repo.getByCode(resident.getResidentCode()).isPresent())
             return "Resident code already exists";
         return repo.save(resident) ? "Resident added successfully" : "Failed to add resident";

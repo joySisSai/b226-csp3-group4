@@ -15,7 +15,6 @@ public class ResidentController {
 
     public List<Resident> getAllResidents() { return residentService.getAllResidents(); }
     public Resident getResidentById(int id) { return residentService.getResidentById(id); }
-    public List<Resident> searchResidents(String keyword) { return residentService.searchResidents(keyword); }
     public String addResident(Resident resident) { return residentService.addResident(resident); }
     public String updateResident(Resident resident) { return residentService.updateResident(resident); }
     public String deactivateResident(int id) { return residentService.deactivateResident(id); }
