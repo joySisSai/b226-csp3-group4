@@ -25,6 +25,8 @@ public class BarangayConnectApplication {
                 new AdminDashboard(scanner),
                 new StaffDashboard(scanner),
                 new ResidentDashboard(scanner)
+
+
         );
 
         while (true) {

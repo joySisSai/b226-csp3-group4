@@ -2,7 +2,7 @@ package com.joysistvi.brgyconnectapp.model;
 
 import java.time.LocalDateTime;
 
-public class RequestStatusHistory {
+public class    RequestStatusHistory {
     private Long historyId;
     private Long requestId;
     private RequestStatus oldStatus;

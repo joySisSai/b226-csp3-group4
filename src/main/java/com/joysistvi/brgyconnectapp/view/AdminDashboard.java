@@ -34,7 +34,9 @@ public class AdminDashboard {
             ConsoleUI.printPrompt("Choose an option: ");
             choice = scanner.nextLine().trim();
 
-            if (!choice.equals("0")) {
+            if(choice.equals("8")){
+                serviceTypeMenu();
+            }else if (!choice.equals("0")) {
                 System.out.println();
                 ConsoleUI.printInfo("This feature is not implemented yet.");
                 System.out.println();
@@ -55,5 +57,36 @@ public class AdminDashboard {
         ConsoleUI.printHeader("Admin Dashboard");
         System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
+    }
+
+    private void serviceTypeMenu() {
+        String choice;
+
+        do {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("Manage Service Types");
+
+            ConsoleUI.printMenuOption("1", "View Service Types");
+            ConsoleUI.printMenuOption("2", "Add Service Types");
+            ConsoleUI.printMenuOption("3", "Update Service Types");
+            ConsoleUI.printMenuOption("4", "Delete Service Types");
+            ConsoleUI.printMenuOption("5", "Back");
+
+            ConsoleUI.printPrompt("Choose an Option : ");
+            choice = scanner.nextLine().trim();
+
+            switch(choice) {
+                case "1":
+                    ConsoleUI.printMenuOption("1", "Viewing Service Types");
+                    break;
+            }
+            if(!choice.equals("5")){
+                ConsoleUI.printPrompt("Press Enter to Continue ... ");
+                scanner.nextLine();
+            }
+
+
+        }while (true);
+
     }
 }
