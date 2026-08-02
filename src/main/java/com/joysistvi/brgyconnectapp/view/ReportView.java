@@ -79,27 +79,25 @@ public class ReportView {
             return;
         }
 
-        System.out.printf("%-20s %10s %10s %10s %10s%n",
-                "Purok", "Total", "Active", "Inactive", "Members");
-        System.out.println("-".repeat(66));
+        TableFormatter formatter = new TableFormatter("Purok", "Total", "Active", "Inactive", "Members");
         long total = 0;
         long active = 0;
         long inactive = 0;
         long members = 0;
         for (HouseholdReportRow row : rows) {
-            System.out.printf("%-20s %10d %10d %10d %10d%n",
+            formatter.addRow(
                     row.purok(),
-                    row.totalHouseholds(),
-                    row.activeHouseholds(),
-                    row.inactiveHouseholds(),
-                    row.totalMembers());
+                    String.valueOf(row.totalHouseholds()),
+                    String.valueOf(row.activeHouseholds()),
+                    String.valueOf(row.inactiveHouseholds()),
+                    String.valueOf(row.totalMembers()));
             total += row.totalHouseholds();
             active += row.activeHouseholds();
             inactive += row.inactiveHouseholds();
             members += row.totalMembers();
         }
-        System.out.println("-".repeat(66));
-        System.out.printf("%-20s %10d %10d %10d %10d%n", "TOTAL", total, active, inactive, members);
+        formatter.addRow("TOTAL", String.valueOf(total), String.valueOf(active), String.valueOf(inactive), String.valueOf(members));
+        formatter.print();
     }
 
     private void showServiceRequestSummary(User actingUser) {
@@ -127,10 +125,7 @@ public class ReportView {
 
         ConsoleUI.printInfo("Period: " + startDate + " to " + endDate +
                 " | Status: " + (status == null ? "All" : formatEnum(status)));
-        System.out.printf("%-26s %6s %6s %7s %6s %6s %6s %6s %12s%n",
-                "Service", "Total", "Pend", "Review", "Appr", "Rel", "Rej", "Canc", "Fees");
-        System.out.println("-".repeat(92));
-
+        TableFormatter formatter = new TableFormatter("Service", "Total", "Pend", "Review", "Appr", "Rel", "Rej", "Canc", "Fees");
         long total = 0;
         long pending = 0;
         long review = 0;
@@ -140,16 +135,16 @@ public class ReportView {
         long cancelled = 0;
         BigDecimal fees = BigDecimal.ZERO;
         for (ServiceRequestReportRow row : rows) {
-            System.out.printf("%-26s %6d %6d %7d %6d %6d %6d %6d %12s%n",
+            formatter.addRow(
                     abbreviate(row.serviceName(), 26),
-                    row.totalRequests(),
-                    row.pendingRequests(),
-                    row.underReviewRequests(),
-                    row.approvedRequests(),
-                    row.releasedRequests(),
-                    row.rejectedRequests(),
-                    row.cancelledRequests(),
-                    row.totalFees());
+                    String.valueOf(row.totalRequests()),
+                    String.valueOf(row.pendingRequests()),
+                    String.valueOf(row.underReviewRequests()),
+                    String.valueOf(row.approvedRequests()),
+                    String.valueOf(row.releasedRequests()),
+                    String.valueOf(row.rejectedRequests()),
+                    String.valueOf(row.cancelledRequests()),
+                    String.valueOf(row.totalFees()));
             total += row.totalRequests();
             pending += row.pendingRequests();
             review += row.underReviewRequests();
@@ -159,15 +154,12 @@ public class ReportView {
             cancelled += row.cancelledRequests();
             fees = fees.add(row.totalFees());
         }
-        System.out.println("-".repeat(92));
-        System.out.printf("%-26s %6d %6d %7d %6d %6d %6d %6d %12s%n",
-                "TOTAL", total, pending, review, approved, released, rejected, cancelled, fees);
+        formatter.addRow("TOTAL", String.valueOf(total), String.valueOf(pending), String.valueOf(review), String.valueOf(approved), String.valueOf(released), String.valueOf(rejected), String.valueOf(cancelled), String.valueOf(fees));
+        formatter.print();
     }
 
     private void printResidentRows(List<ResidentReportRow> rows) {
-        System.out.printf("%-20s %8s %8s %8s %8s %8s %8s%n",
-                "Purok", "Total", "Active", "Moved", "Deceased", "Inactive", "Voters");
-        System.out.println("-".repeat(78));
+        TableFormatter formatter = new TableFormatter("Purok", "Total", "Active", "Moved", "Deceased", "Inactive", "Voters");
         long total = 0;
         long active = 0;
         long transferred = 0;
@@ -175,14 +167,14 @@ public class ReportView {
         long inactive = 0;
         long voters = 0;
         for (ResidentReportRow row : rows) {
-            System.out.printf("%-20s %8d %8d %8d %8d %8d %8d%n",
+            formatter.addRow(
                     row.purok(),
-                    row.totalResidents(),
-                    row.activeResidents(),
-                    row.transferredResidents(),
-                    row.deceasedResidents(),
-                    row.inactiveResidents(),
-                    row.registeredVoters());
+                    String.valueOf(row.totalResidents()),
+                    String.valueOf(row.activeResidents()),
+                    String.valueOf(row.transferredResidents()),
+                    String.valueOf(row.deceasedResidents()),
+                    String.valueOf(row.inactiveResidents()),
+                    String.valueOf(row.registeredVoters()));
             total += row.totalResidents();
             active += row.activeResidents();
             transferred += row.transferredResidents();
@@ -190,28 +182,25 @@ public class ReportView {
             inactive += row.inactiveResidents();
             voters += row.registeredVoters();
         }
-        System.out.println("-".repeat(78));
-        System.out.printf("%-20s %8d %8d %8d %8d %8d %8d%n",
-                "TOTAL", total, active, transferred, deceased, inactive, voters);
+        formatter.addRow("TOTAL", String.valueOf(total), String.valueOf(active), String.valueOf(transferred), String.valueOf(deceased), String.valueOf(inactive), String.valueOf(voters));
+        formatter.print();
     }
 
     private void printVoterRows(List<ResidentReportRow> rows) {
-        System.out.printf("%-24s %12s %12s %12s%n", "Purok", "Residents", "Voters", "Percent");
-        System.out.println("-".repeat(64));
+        TableFormatter formatter = new TableFormatter("Purok", "Residents", "Voters", "Percent");
         long residents = 0;
         long voters = 0;
         for (ResidentReportRow row : rows) {
-            System.out.printf("%-24s %12d %12d %11.1f%%%n",
+            formatter.addRow(
                     row.purok(),
-                    row.totalResidents(),
-                    row.registeredVoters(),
-                    percentage(row.registeredVoters(), row.totalResidents()));
+                    String.valueOf(row.totalResidents()),
+                    String.valueOf(row.registeredVoters()),
+                    String.format("%.1f%%", percentage(row.registeredVoters(), row.totalResidents())));
             residents += row.totalResidents();
             voters += row.registeredVoters();
         }
-        System.out.println("-".repeat(64));
-        System.out.printf("%-24s %12d %12d %11.1f%%%n",
-                "TOTAL", residents, voters, percentage(voters, residents));
+        formatter.addRow("TOTAL", String.valueOf(residents), String.valueOf(voters), String.format("%.1f%%", percentage(voters, residents)));
+        formatter.print();
     }
 
     private String promptOptionalFilter(String label) {

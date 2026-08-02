@@ -196,17 +196,16 @@ public class ResidentManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-14s %-30s %-12s %-12s%n",
-                "ID", "Code", "Name", "Status", "Household");
-        System.out.println("-".repeat(82));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Name", "Status", "Household");
         for (Resident resident : residents) {
-            System.out.printf("%-6s %-14s %-30s %-12s %-12s%n",
-                    resident.getResidentId(),
+            formatter.addRow(
+                    String.valueOf(resident.getResidentId()),
                     valueOrDash(resident.getResidentCode()),
                     abbreviate(fullName(resident), 30),
-                    resident.getResidencyStatus(),
-                    resident.getHouseholdId() == null ? "-" : resident.getHouseholdId());
+                    String.valueOf(resident.getResidencyStatus()),
+                    resident.getHouseholdId() == null ? "-" : String.valueOf(resident.getHouseholdId()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(residents.size() + " record(s) found.");
     }

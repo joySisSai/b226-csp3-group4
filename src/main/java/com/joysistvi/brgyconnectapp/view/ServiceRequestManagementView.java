@@ -157,18 +157,17 @@ public class ServiceRequestManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-23s %-10s %-10s %-15s %-12s%n",
-                "ID", "Request Number", "Resident", "Service", "Status", "Date");
-        System.out.println("-".repeat(84));
+        TableFormatter formatter = new TableFormatter("ID", "Request Number", "Resident", "Service", "Status", "Date");
         for (ServiceRequest request : requests) {
-            System.out.printf("%-6s %-23s %-10s %-10s %-15s %-12s%n",
-                    request.getRequestId(),
+            formatter.addRow(
+                    String.valueOf(request.getRequestId()),
                     request.getRequestNumber(),
-                    request.getResidentId(),
-                    request.getServiceTypeId(),
-                    request.getStatus(),
-                    request.getRequestDate());
+                    String.valueOf(request.getResidentId()),
+                    String.valueOf(request.getServiceTypeId()),
+                    String.valueOf(request.getStatus()),
+                    String.valueOf(request.getRequestDate()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(requests.size() + " request(s) found.");
     }
@@ -196,32 +195,30 @@ public class ServiceRequestManagementView {
             return;
         }
 
-        System.out.printf("%-20s %-15s %-15s %-10s %-30s%n",
-                "Changed At", "Old Status", "New Status", "User", "Remarks");
-        System.out.println("-".repeat(96));
+        TableFormatter formatter = new TableFormatter("Changed At", "Old Status", "New Status", "User", "Remarks");
         for (RequestStatusHistory entry : history) {
-            System.out.printf("%-20s %-15s %-15s %-10s %-30s%n",
-                    entry.getChangedAt(),
-                    entry.getOldStatus() == null ? "-" : entry.getOldStatus(),
-                    entry.getNewStatus(),
-                    entry.getChangedByUserId(),
+            formatter.addRow(
+                    String.valueOf(entry.getChangedAt()),
+                    entry.getOldStatus() == null ? "-" : String.valueOf(entry.getOldStatus()),
+                    String.valueOf(entry.getNewStatus()),
+                    String.valueOf(entry.getChangedByUserId()),
                     abbreviate(valueOrDash(entry.getRemarks()), 30));
         }
+        formatter.print();
     }
 
     private void printServiceTypes(List<ServiceType> serviceTypes) {
         ConsoleUI.printSubHeader("Available Services");
-        System.out.printf("%-6s %-14s %-30s %-12s %-8s%n",
-                "ID", "Code", "Service", "Fee", "Days");
-        System.out.println("-".repeat(74));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Service", "Fee", "Days");
         for (ServiceType serviceType : serviceTypes) {
-            System.out.printf("%-6s %-14s %-30s PHP %-8s %-8s%n",
-                    serviceType.getServiceTypeId(),
+            formatter.addRow(
+                    String.valueOf(serviceType.getServiceTypeId()),
                     serviceType.getServiceCode(),
                     abbreviate(serviceType.getServiceName(), 30),
-                    serviceType.getDefaultFee(),
-                    serviceType.getExpectedProcessingDays());
+                    "PHP " + serviceType.getDefaultFee(),
+                    String.valueOf(serviceType.getExpectedProcessingDays()));
         }
+        formatter.print();
         System.out.println();
     }
 

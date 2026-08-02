@@ -142,18 +142,17 @@ public class ServiceTypeManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-16s %-30s %-12s %-8s %-10s%n",
-                "ID", "Code", "Service", "Fee", "Days", "Status");
-        System.out.println("-".repeat(88));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Service", "Fee", "Days", "Status");
         for (ServiceType serviceType : serviceTypes) {
-            System.out.printf("%-6s %-16s %-30s %-12s %-8s %-10s%n",
-                    serviceType.getServiceTypeId(),
+            formatter.addRow(
+                    String.valueOf(serviceType.getServiceTypeId()),
                     abbreviate(serviceType.getServiceCode(), 16),
                     abbreviate(serviceType.getServiceName(), 30),
                     "PHP " + serviceType.getDefaultFee(),
-                    serviceType.getExpectedProcessingDays(),
+                    String.valueOf(serviceType.getExpectedProcessingDays()),
                     serviceType.isActive() ? "Active" : "Inactive");
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(serviceTypes.size() + " service type(s) found.");
     }

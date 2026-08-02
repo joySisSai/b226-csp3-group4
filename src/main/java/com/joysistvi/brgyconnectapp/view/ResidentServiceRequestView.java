@@ -86,15 +86,15 @@ public class ResidentServiceRequestView {
             return;
         }
 
-        System.out.printf("%-10s %-25s %-15s %-12s\n", "ID", "Request Number", "Date", "Status");
-        System.out.println("-".repeat(65));
+        TableFormatter formatter = new TableFormatter("ID", "Request Number", "Date", "Status");
         for (ServiceRequest req : requests) {
-            System.out.printf("%-10d %-25s %-15s %-12s\n",
-                    req.getRequestId(),
+            formatter.addRow(
+                    String.valueOf(req.getRequestId()),
                     req.getRequestNumber(),
-                    req.getRequestDate(),
-                    req.getStatus());
+                    String.valueOf(req.getRequestDate()),
+                    String.valueOf(req.getStatus()));
         }
+        formatter.print();
 
         ConsoleUI.printPrompt("\nEnter Request ID to view details and history (or 0 to go back): ");
         long requestId;
@@ -128,15 +128,15 @@ public class ResidentServiceRequestView {
         if (history.isEmpty()) {
             System.out.println("No history available.");
         } else {
-            System.out.printf("%-20s %-15s %-15s %s\n", "Date", "Old Status", "New Status", "Remarks");
-            System.out.println("-".repeat(80));
+            TableFormatter historyFormatter = new TableFormatter("Date", "Old Status", "New Status", "Remarks");
             for (RequestStatusHistory h : history) {
-                System.out.printf("%-20s %-15s %-15s %s\n",
-                        h.getChangedAt(),
-                        h.getOldStatus() == null ? "NEW" : h.getOldStatus(),
-                        h.getNewStatus(),
+                historyFormatter.addRow(
+                        String.valueOf(h.getChangedAt()),
+                        h.getOldStatus() == null ? "NEW" : String.valueOf(h.getOldStatus()),
+                        String.valueOf(h.getNewStatus()),
                         h.getRemarks() == null ? "" : h.getRemarks());
             }
+            historyFormatter.print();
         }
     }
 }

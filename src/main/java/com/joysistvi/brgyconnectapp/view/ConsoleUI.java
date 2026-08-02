@@ -8,14 +8,16 @@ public class ConsoleUI {
     public static final String YELLOW = "\033[33m";
     public static final String RED = "\033[31m";
     public static final String BLUE = "\033[34m";
+    public static final String WHITE = "\033[97m";
+    public static final String BG_BLACK = "\033[40m";
 
     public static void clearScreen() {
-        System.out.print("\033[H\033[2J");
+        System.out.print(BG_BLACK + "\033[H\033[2J");
         System.out.flush();
     }
 
     public static void resetTerminal() {
-        System.out.print("\033[0m");
+        System.out.print("\033[0m" + BG_BLACK);
         System.out.flush();
     }
 
@@ -23,26 +25,26 @@ public class ConsoleUI {
         System.out.println(CYAN + BOLD);
         System.out.println("  ======================================================================");
         System.out.println("                                                                        ");
-        System.out.println("  ██████╗  █████╗ ██████╗  █████╗ ███╗   ██╗ ██████╗  █████╗ ██╗   ██╗  ");
+        System.out.println(BLUE + "  ██████╗  █████╗ ██████╗  █████╗ ███╗   ██╗ ██████╗  █████╗ ██╗   ██╗  ");
         System.out.println("  ██╔══██╗██╔══██╗██╔══██╗██╔══██╗████╗  ██║██╔════╝ ██╔══██╗╚██╗ ██╔╝  ");
         System.out.println("  ██████╔╝███████║██████╔╝███████║██╔██╗ ██║██║  ███╗███████║ ╚████╔╝   ");
-        System.out.println("  ██╔══██╗██╔══██║██╔══██╗██╔══██║██║╚██╗██║██║   ██║██╔══██║  ╚██╔╝    ");
+        System.out.println(CYAN + "  ██╔══██╗██╔══██║██╔══██╗██╔══██║██║╚██╗██║██║   ██║██╔══██║  ╚██╔╝    ");
         System.out.println("  ██████╔╝██║  ██║██║  ██║██║  ██║██║ ╚████║╚██████╔╝██║  ██║   ██║     ");
         System.out.println("  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝   ╚═╝     ");
         System.out.println("                                                                        ");
-        System.out.println("               M A N A G E M E N T   S Y S T E M                        ");
+        System.out.println(WHITE + "               M A N A G E M E N T   S Y S T E M                        ");
         System.out.println("                                                                        ");
-        System.out.println("  ======================================================================");
-        System.out.println(RESET);
+        System.out.println(CYAN + "  ======================================================================");
+        System.out.println(RESET + BG_BLACK);
     }
 
     public static void printHeader(String title) {
         int width = 50;
-        System.out.println(CYAN + BOLD + "╔" + "═".repeat(width - 2) + "╗" + RESET);
+        System.out.println(BLUE + "╔" + "═".repeat(width - 2) + "╗" + RESET + BG_BLACK);
         int paddingLeft = (width - 2 - title.length()) / 2;
         int paddingRight = width - 2 - title.length() - paddingLeft;
-        System.out.println(CYAN + BOLD + "║" + " ".repeat(Math.max(0, paddingLeft)) + title + " ".repeat(Math.max(0, paddingRight)) + "║" + RESET);
-        System.out.println(CYAN + BOLD + "╚" + "═".repeat(width - 2) + "╝" + RESET);
+        System.out.println(BLUE + "║" + " ".repeat(Math.max(0, paddingLeft)) + CYAN + BOLD + title + RESET + BG_BLACK + " ".repeat(Math.max(0, paddingRight)) + BLUE + "║" + RESET + BG_BLACK);
+        System.out.println(BLUE + "╚" + "═".repeat(width - 2) + "╝" + RESET + BG_BLACK);
     }
 
     public static void printSubHeader(String title) {
