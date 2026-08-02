@@ -104,7 +104,8 @@ public class ResidentDashboard {
                 
         String address = "N/A";
         if (resident.getHouseholdId() != null) {
-            com.joysistvi.brgyconnectapp.model.Household h = householdController.getById(resident.getHouseholdId(), actingUserId);
+            com.joysistvi.brgyconnectapp.model.Household h = householdController.getOwnHousehold(
+                    resident.getHouseholdId(), resident.getResidentId(), actingUserId);
             if (h != null) {
                 address = h.getAddressLine() + ", " + h.getPurok();
             }

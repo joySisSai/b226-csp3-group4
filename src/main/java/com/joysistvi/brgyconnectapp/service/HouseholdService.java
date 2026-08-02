@@ -50,6 +50,24 @@ public class HouseholdService {
         }
     }
 
+    public Household getOwnHousehold(int householdId, int residentId, int actingUserId) {
+        if (authorizationService == null || !authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return null;
+        }
+        if (householdId <= 0) {
+            return null;
+        }
+        try {
+            Resident resident = residentRepo.getById(residentId).orElse(null);
+            if (resident == null || resident.getHouseholdId() == null || resident.getHouseholdId() != householdId) {
+                return null;
+            }
+            return householdRepo.getById(householdId).orElse(null);
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
     public List<Household> searchHouseholds(String keyword, int actingUserId) {
         if (!canManage(actingUserId)) {
             return List.of();
