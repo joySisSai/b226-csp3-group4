@@ -145,9 +145,9 @@ public class ServiceTypeAdminService {
                 serviceType.getDefaultFee().compareTo(MAXIMUM_FEE) > 0) {
             return "Default fee must be between 0.00 and " + MAXIMUM_FEE;
         }
-        if (serviceType.getExpectedProcessingDays() < 0 ||
+        if (serviceType.getExpectedProcessingDays() < 1 ||
                 serviceType.getExpectedProcessingDays() > MAXIMUM_PROCESSING_DAYS) {
-            return "Expected processing days must be between 0 and " + MAXIMUM_PROCESSING_DAYS;
+            return "Expected processing days must be between 1 and " + MAXIMUM_PROCESSING_DAYS;
         }
         return null;
     }
