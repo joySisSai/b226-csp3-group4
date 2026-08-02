@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface ServiceRequestRepo {
     List<ServiceRequest> getRecent(int maximumRows) throws SQLException;
 
+    List<ServiceRequest> getOwn(int residentId, int maximumRows) throws SQLException;
+
     List<ServiceRequest> search(String keyword, int maximumRows) throws SQLException;
 
     Optional<ServiceRequest> getById(long requestId) throws SQLException;

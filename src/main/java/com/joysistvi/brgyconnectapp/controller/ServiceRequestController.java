@@ -54,6 +54,36 @@ public class ServiceRequestController {
         return result;
     }
 
+    public List<ServiceRequest> getOwnRequests(int residentId, int actingUserId) {
+        return requestService.getOwnRequests(residentId, actingUserId);
+    }
+
+    public ServiceRequest getOwnRequestById(long requestId, int residentId, int actingUserId) {
+        return requestService.getOwnRequestById(requestId, residentId, actingUserId);
+    }
+
+    public List<RequestStatusHistory> getOwnStatusHistory(long requestId, int residentId, int actingUserId) {
+        return requestService.getOwnStatusHistory(requestId, residentId, actingUserId);
+    }
+
+    public List<ServiceType> getActiveServiceTypesForResident(int residentId, int actingUserId) {
+        return requestService.getActiveServiceTypesForResident(residentId, actingUserId);
+    }
+
+    public String createOwnRequest(ServiceRequest request, int residentId, int actingUserId) {
+        String result = requestService.createOwnRequest(request, residentId, actingUserId);
+        if (result != null && result.endsWith("submitted successfully") && activityLogService != null) {
+            activityLogService.record(
+                    actingUserId,
+                    "CREATE",
+                    "SERVICE_REQUEST",
+                    request.getRequestId(),
+                    "Resident submitted service request " + request.getRequestNumber() + "."
+            );
+        }
+        return result;
+    }
+
     public String updateStatus(long requestId,
                                RequestStatus newStatus,
                                String remarks,

@@ -93,9 +93,10 @@ public class BarangayConnectApplication {
                 residentRepo,
                 authorizationService
         );
+        ServiceRequestController serviceRequestController = new ServiceRequestController(serviceRequestService, activityLogService);
         ServiceRequestManagementView serviceRequestManagementView = new ServiceRequestManagementView(
                 scanner,
-                new ServiceRequestController(serviceRequestService, activityLogService)
+                serviceRequestController
         );
         ReportRepo reportRepo = new ReportRepoImpl(connectionFactory);
         ReportView reportView = new ReportView(
@@ -136,7 +137,7 @@ public class BarangayConnectApplication {
                         serviceRequestManagementView,
                         reportView
                 ),
-                new ResidentDashboard(scanner, residentController)
+                new ResidentDashboard(scanner, residentController, serviceRequestController)
         );
 
         while (true) {

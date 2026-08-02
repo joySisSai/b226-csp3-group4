@@ -1,0 +1,142 @@
+package com.joysistvi.brgyconnectapp.view;
+
+import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
+import com.joysistvi.brgyconnectapp.model.RequestStatusHistory;
+import com.joysistvi.brgyconnectapp.model.ServiceRequest;
+import com.joysistvi.brgyconnectapp.model.ServiceType;
+import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.service.DataAccessException;
+
+import java.util.List;
+import java.util.Scanner;
+
+public class ResidentServiceRequestView {
+    private final Scanner scanner;
+    private final ServiceRequestController requestController;
+
+    public ResidentServiceRequestView(Scanner scanner, ServiceRequestController requestController) {
+        this.scanner = scanner;
+        this.requestController = requestController;
+    }
+
+    public void showSubmit(User user) {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Submit Service Request");
+
+        int residentId = user.getResidentId();
+        int actingUserId = user.getUserId();
+
+        List<ServiceType> activeTypes = requestController.getActiveServiceTypesForResident(residentId, actingUserId);
+        if (activeTypes.isEmpty()) {
+            ConsoleUI.printError("No service types are currently available.");
+            return;
+        }
+
+        System.out.println("Available Service Types:");
+        for (ServiceType type : activeTypes) {
+            System.out.printf("[%d] %s (Fee: %.2f)\n",
+                    type.getServiceTypeId(), type.getServiceName(), type.getDefaultFee());
+        }
+
+        ConsoleUI.printPrompt("\nEnter Service Type ID to request (or 0 to cancel): ");
+        int typeId;
+        try {
+            typeId = Integer.parseInt(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            ConsoleUI.printError("Invalid input");
+            return;
+        }
+
+        if (typeId <= 0) {
+            ConsoleUI.printInfo("Submission cancelled");
+            return;
+        }
+
+        boolean valid = activeTypes.stream().anyMatch(t -> t.getServiceTypeId() == typeId);
+        if (!valid) {
+            ConsoleUI.printError("Invalid service type ID");
+            return;
+        }
+
+        ConsoleUI.printPrompt("Enter Purpose (max 500 chars): ");
+        String purpose = scanner.nextLine().trim();
+
+        ServiceRequest request = new ServiceRequest();
+        request.setServiceTypeId(typeId);
+        request.setPurpose(purpose);
+
+        String result = requestController.createOwnRequest(request, residentId, actingUserId);
+        if (result.endsWith("submitted successfully")) {
+            ConsoleUI.printSuccess(result);
+        } else {
+            ConsoleUI.printError(result);
+        }
+    }
+
+    public void showCheckStatus(User user) {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("My Service Requests");
+
+        int residentId = user.getResidentId();
+        int actingUserId = user.getUserId();
+
+        List<ServiceRequest> requests = requestController.getOwnRequests(residentId, actingUserId);
+        if (requests.isEmpty()) {
+            ConsoleUI.printInfo("You have no service requests.");
+            return;
+        }
+
+        System.out.printf("%-10s %-25s %-15s %-12s\n", "ID", "Request Number", "Date", "Status");
+        System.out.println("-".repeat(65));
+        for (ServiceRequest req : requests) {
+            System.out.printf("%-10d %-25s %-15s %-12s\n",
+                    req.getRequestId(),
+                    req.getRequestNumber(),
+                    req.getRequestDate(),
+                    req.getStatus());
+        }
+
+        ConsoleUI.printPrompt("\nEnter Request ID to view details and history (or 0 to go back): ");
+        long requestId;
+        try {
+            requestId = Long.parseLong(scanner.nextLine().trim());
+        } catch (NumberFormatException e) {
+            ConsoleUI.printError("Invalid input");
+            return;
+        }
+
+        if (requestId <= 0) {
+            return;
+        }
+
+        ServiceRequest request = requestController.getOwnRequestById(requestId, residentId, actingUserId);
+        if (request == null) {
+            ConsoleUI.printError("Request not found");
+            return;
+        }
+
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Request Details");
+        System.out.printf("Request Number : %s\n", request.getRequestNumber());
+        System.out.printf("Status         : %s\n", request.getStatus());
+        System.out.printf("Purpose        : %s\n", request.getPurpose());
+        System.out.printf("Date           : %s\n", request.getRequestDate());
+        System.out.printf("Remarks        : %s\n", request.getRemarks() == null ? "None" : request.getRemarks());
+
+        List<RequestStatusHistory> history = requestController.getOwnStatusHistory(requestId, residentId, actingUserId);
+        System.out.println("\nStatus History:");
+        if (history.isEmpty()) {
+            System.out.println("No history available.");
+        } else {
+            System.out.printf("%-20s %-15s %-15s %s\n", "Date", "Old Status", "New Status", "Remarks");
+            System.out.println("-".repeat(80));
+            for (RequestStatusHistory h : history) {
+                System.out.printf("%-20s %-15s %-15s %s\n",
+                        h.getChangedAt(),
+                        h.getOldStatus() == null ? "NEW" : h.getOldStatus(),
+                        h.getNewStatus(),
+                        h.getRemarks() == null ? "" : h.getRemarks());
+            }
+        }
+    }
+}

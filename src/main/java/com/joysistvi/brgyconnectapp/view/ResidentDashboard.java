@@ -1,6 +1,7 @@
 package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
+import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.service.DataAccessException;
@@ -10,10 +11,12 @@ import java.util.Scanner;
 public class ResidentDashboard {
     private final Scanner scanner;
     private final ResidentController residentController;
+    private final ResidentServiceRequestView requestView;
 
-    public ResidentDashboard(Scanner scanner, ResidentController residentController) {
+    public ResidentDashboard(Scanner scanner, ResidentController residentController, ServiceRequestController requestController) {
         this.scanner = scanner;
         this.residentController = residentController;
+        this.requestView = new ResidentServiceRequestView(scanner, requestController);
     }
 
     public void show(User user) {
@@ -35,10 +38,10 @@ public class ResidentDashboard {
                         viewMyProfile(user);
                         break;
                     case "2":
-                        //new SubmitServiceRequestView(scanner).show(user);
+                        requestView.showSubmit(user);
                         break;
                     case "3":
-                        ConsoleUI.printInfo("Feature coming soon");
+                        requestView.showCheckStatus(user);
                         break;
                     case "0":
                         ConsoleUI.printSuccess("Logged out");

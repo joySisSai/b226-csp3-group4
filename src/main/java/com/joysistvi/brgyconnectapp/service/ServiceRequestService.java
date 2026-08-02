@@ -202,6 +202,114 @@ public class ServiceRequestService {
         };
     }
 
+    public List<ServiceRequest> getOwnRequests(int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return List.of();
+        }
+        try {
+            return requestRepo.getOwn(residentId, MAXIMUM_RESULTS);
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public ServiceRequest getOwnRequestById(long requestId, int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return null;
+        }
+        try {
+            ServiceRequest request = requestRepo.getById(requestId).orElse(null);
+            if (request != null && request.getResidentId() == residentId) {
+                return request;
+            }
+            return null;
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public List<RequestStatusHistory> getOwnStatusHistory(long requestId, int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return List.of();
+        }
+        try {
+            ServiceRequest request = requestRepo.getById(requestId).orElse(null);
+            if (request != null && request.getResidentId() == residentId) {
+                return requestRepo.getStatusHistory(requestId);
+            }
+            return List.of();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public List<ServiceType> getActiveServiceTypesForResident(int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return List.of();
+        }
+        try {
+            return serviceTypeRepo.getAllActive();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public String createOwnRequest(ServiceRequest request, int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return "Access denied: you can only create requests for your own profile";
+        }
+        
+        String validationError = validateNewOwnRequest(request);
+        if (validationError != null) {
+            return validationError;
+        }
+
+        try {
+            Resident resident = residentRepo.getById(residentId).orElse(null);
+            if (resident == null) {
+                return "Resident record not found";
+            }
+            if (resident.getResidencyStatus() != ResidencyStatus.ACTIVE) {
+                return "Only active residents can create service requests";
+            }
+
+            ServiceType serviceType = serviceTypeRepo.getById(request.getServiceTypeId()).orElse(null);
+            if (serviceType == null || !serviceType.isActive()) {
+                return "The selected service type is unavailable";
+            }
+
+            request.setResidentId(residentId);
+            request.setCreatedByUserId(actingUserId);
+            request.setRequestNumber(generateRequestNumber());
+            request.setRequestDate(LocalDate.now());
+            request.setServiceFeeSnapshot(serviceType.getDefaultFee());
+            request.setStatus(RequestStatus.PENDING);
+            long requestId = requestRepo.saveWithInitialHistory(request);
+            request.setRequestId(requestId);
+            return "Service request " + request.getRequestNumber() + " submitted successfully";
+        } catch (SQLException exception) {
+            return DATABASE_ERROR;
+        }
+    }
+
+    private String validateNewOwnRequest(ServiceRequest request) {
+        if (request == null) {
+            return "Service request information is required";
+        }
+        if (request.getServiceTypeId() == null || request.getServiceTypeId() <= 0) {
+            return "A valid service type is required";
+        }
+        if (request.getPurpose() == null || request.getPurpose().isBlank()) {
+            return "Request purpose is required";
+        }
+        if (request.getPurpose().trim().length() > 500) {
+            return "Request purpose must not exceed 500 characters";
+        }
+        request.setPurpose(request.getPurpose().trim());
+        request.setRemarks(null);
+        return null;
+    }
+
     private String validateNewRequest(ServiceRequest request) {
         if (request == null) {
             return "Service request information is required";

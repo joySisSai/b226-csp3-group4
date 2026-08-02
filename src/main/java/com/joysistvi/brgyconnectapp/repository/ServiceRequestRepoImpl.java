@@ -52,6 +52,28 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
     }
 
     @Override
+    public List<ServiceRequest> getOwn(int residentId, int maximumRows) throws SQLException {
+        String sql = "SELECT " + REQUEST_COLUMNS + """
+                FROM service_requests sr
+                WHERE sr.resident_id = ?
+                ORDER BY sr.created_at DESC
+                LIMIT ?
+                """;
+        List<ServiceRequest> requests = new ArrayList<>();
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setInt(1, residentId);
+            statement.setInt(2, maximumRows);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    requests.add(mapRequest(resultSet));
+                }
+            }
+        }
+        return requests;
+    }
+
+    @Override
     public List<ServiceRequest> search(String keyword, int maximumRows) throws SQLException {
         String sql = "SELECT " + REQUEST_COLUMNS + """
                 FROM service_requests sr
