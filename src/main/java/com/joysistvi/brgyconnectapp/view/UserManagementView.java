@@ -65,7 +65,7 @@ public class UserManagementView {
     private void viewUser(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("User Account Details");
-        int userId = promptPositiveInteger("User ID: ");
+        int userId = promptPositiveInteger("User ID: ", false);
         User user = userController.getById(userId, userId(actingAdmin));
         if (user == null) {
             ConsoleUI.printError("User account not found.");
@@ -79,29 +79,63 @@ public class UserManagementView {
         ConsoleUI.printHeader("Create User Account");
 
         User user = new User();
-        user.setUsername(promptRequired("Username: ", 50));
-        user.setDisplayName(promptRequired("Display name: ", 150));
-        user.setRole(promptRole());
-        if (user.getRole() == UserRole.RESIDENT) {
-            user.setResidentId(promptPositiveInteger("Resident ID: "));
-        }
+        boolean firstTry = true;
 
-        char[] password = readConfirmedPassword();
-        if (password == null) {
-            return;
-        }
-        if (!promptYesNo("Create this account? (Y/N): ")) {
+        while (true) {
+            if (firstTry) {
+                user.setUsername(promptRequired("Username: ", 50));
+                user.setDisplayName(promptRequired("Display name: ", 150));
+                user.setRole(promptRole(null));
+                if (user.getRole() == UserRole.RESIDENT) {
+                    user.setResidentId(promptPositiveInteger("Resident ID: ", true));
+                }
+            } else {
+                ConsoleUI.printInfo("Press Enter to keep the current value.");
+                user.setUsername(promptTextUpdate("Username", user.getUsername(), 50, true));
+                user.setDisplayName(promptTextUpdate("Display name", user.getDisplayName(), 150, true));
+                user.setRole(promptRole(user.getRole()));
+                if (user.getRole() == UserRole.RESIDENT) {
+                    user.setResidentId(promptIntegerUpdate("Resident ID", user.getResidentId(), true));
+                } else {
+                    user.setResidentId(null);
+                }
+            }
+
+            char[] password = readConfirmedPassword();
+            if (password == null) {
+                if (!promptYesNo("Do you want to edit your details and try again? (Y/N): ", false)) {
+                    break;
+                }
+                firstTry = false;
+                continue;
+            }
+
+            if (!promptYesNo("Create this account? (Y/N): ", false)) {
+                Arrays.fill(password, '\0');
+                ConsoleUI.printInfo("Account creation cancelled.");
+                break;
+            }
+
+            String result = userController.create(user, password, userId(actingAdmin));
             Arrays.fill(password, '\0');
-            ConsoleUI.printInfo("Account creation cancelled.");
-            return;
+
+            if (result != null && result.toLowerCase().contains("success")) {
+                printOperationResult(result);
+                break;
+            }
+
+            ConsoleUI.printError(result);
+            if (!promptYesNo("Registration failed. Do you want to edit your details and try again? (Y/N): ", false)) {
+                break;
+            }
+            firstTry = false;
         }
-        printOperationResult(userController.create(user, password, userId(actingAdmin)));
     }
 
     private void changeRole(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Change User Role");
-        int userId = promptPositiveInteger("User ID: ");
+        int userId = promptPositiveInteger("User ID: ", false);
         User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
@@ -109,8 +143,8 @@ public class UserManagementView {
         }
 
         printUserDetails(target);
-        UserRole newRole = promptRole();
-        if (!promptYesNo("Change role to " + formatEnum(newRole) + "? (Y/N): ")) {
+        UserRole newRole = promptRole(null);
+        if (!promptYesNo("Change role to " + formatEnum(newRole) + "? (Y/N): ", false)) {
             ConsoleUI.printInfo("Role change cancelled.");
             return;
         }
@@ -124,7 +158,7 @@ public class UserManagementView {
     private void changeStatus(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Change Account Status");
-        int userId = promptPositiveInteger("User ID: ");
+        int userId = promptPositiveInteger("User ID: ", false);
         User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
@@ -133,7 +167,7 @@ public class UserManagementView {
 
         printUserDetails(target);
         AccountStatus newStatus = promptAccountStatus();
-        if (!promptYesNo("Change status to " + formatEnum(newStatus) + "? (Y/N): ")) {
+        if (!promptYesNo("Change status to " + formatEnum(newStatus) + "? (Y/N): ", false)) {
             ConsoleUI.printInfo("Status change cancelled.");
             return;
         }
@@ -147,14 +181,14 @@ public class UserManagementView {
     private void unlockUser(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Unlock User Account");
-        int userId = promptPositiveInteger("User ID: ");
+        int userId = promptPositiveInteger("User ID: ", false);
         User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
             return;
         }
         printUserDetails(target);
-        if (!promptYesNo("Unlock this account? (Y/N): ")) {
+        if (!promptYesNo("Unlock this account? (Y/N): ", false)) {
             ConsoleUI.printInfo("Unlock cancelled.");
             return;
         }
@@ -164,7 +198,7 @@ public class UserManagementView {
     private void resetPassword(User actingAdmin) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Reset User Password");
-        int userId = promptPositiveInteger("User ID: ");
+        int userId = promptPositiveInteger("User ID: ", false);
         User target = userController.getById(userId, userId(actingAdmin));
         if (target == null) {
             ConsoleUI.printError("User account not found.");
@@ -176,7 +210,7 @@ public class UserManagementView {
         if (password == null) {
             return;
         }
-        if (!promptYesNo("Save the new password? (Y/N): ")) {
+        if (!promptYesNo("Save the new password? (Y/N): ", false)) {
             Arrays.fill(password, '\0');
             ConsoleUI.printInfo("Password reset cancelled.");
             return;
@@ -194,18 +228,17 @@ public class UserManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-18s %-28s %-12s %-20s %-10s%n",
-                "ID", "Username", "Display Name", "Role", "Status", "Resident");
-        System.out.println("-".repeat(100));
+        TableFormatter formatter = new TableFormatter("ID", "Username", "Display Name", "Role", "Status", "Resident");
         for (User user : users) {
-            System.out.printf("%-6s %-18s %-28s %-12s %-20s %-10s%n",
-                    user.getUserId(),
+            formatter.addRow(
+                    String.valueOf(user.getUserId()),
                     abbreviate(user.getUsername(), 18),
                     abbreviate(user.getDisplayName(), 28),
-                    user.getRole(),
-                    user.getAccountStatus(),
-                    user.getResidentId() == null ? "-" : user.getResidentId());
+                    String.valueOf(user.getRole()),
+                    String.valueOf(user.getAccountStatus()),
+                    user.getResidentId() == null ? "-" : String.valueOf(user.getResidentId()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(users.size() + " account(s) found.");
     }
@@ -223,8 +256,8 @@ public class UserManagementView {
         System.out.printf("Updated At      : %s%n", user.getUpdatedAt());
     }
 
-    private UserRole promptRole() {
-        return promptEnum("Role", UserRole.values());
+    private UserRole promptRole(UserRole currentValue) {
+        return promptEnum("Role", UserRole.values(), currentValue);
     }
 
     private AccountStatus promptAccountStatus() {
@@ -233,19 +266,24 @@ public class UserManagementView {
                 AccountStatus.PENDING_ACTIVATION,
                 AccountStatus.INACTIVE
         };
-        return promptEnum("Account status", statuses);
+        return promptEnum("Account status", statuses, null);
     }
 
-    private <E extends Enum<E>> E promptEnum(String label, E[] values) {
+    private <E extends Enum<E>> E promptEnum(String label, E[] values, E currentValue) {
         System.out.println();
         ConsoleUI.printSubHeader(label);
         for (int index = 0; index < values.length; index++) {
             ConsoleUI.printMenuOption(String.valueOf(index + 1), formatEnum(values[index]));
         }
+        String currentLabel = currentValue == null ? "" : " (Enter to keep " + formatEnum(currentValue) + ")";
         while (true) {
-            ConsoleUI.printPrompt("Select " + label.toLowerCase() + ": ");
+            ConsoleUI.printPrompt("Select " + label.toLowerCase() + currentLabel + ": ");
+            String input = scanner.nextLine().trim();
+            if (currentValue != null && input.isEmpty()) {
+                return currentValue;
+            }
             try {
-                int selected = Integer.parseInt(scanner.nextLine().trim());
+                int selected = Integer.parseInt(input);
                 if (selected >= 1 && selected <= values.length) {
                     return values[selected - 1];
                 }
@@ -278,6 +316,24 @@ public class UserManagementView {
         return scanner.nextLine().toCharArray();
     }
 
+    private String promptTextUpdate(String label, String currentValue, int maximumLength, boolean required) {
+        while (true) {
+            String displayVal = currentValue == null || currentValue.isBlank() ? "-" : currentValue;
+            ConsoleUI.printPrompt(label + " [" + displayVal + "]: ");
+            String value = scanner.nextLine().trim();
+            if (value.isEmpty()) {
+                return currentValue;
+            }
+            if (value.length() > maximumLength) {
+                ConsoleUI.printError("Maximum length is " + maximumLength + " characters.");
+            } else if (!required || !value.isBlank()) {
+                return value;
+            } else {
+                ConsoleUI.printError("This field is required.");
+            }
+        }
+    }
+
     private String promptRequired(String label, int maximumLength) {
         while (true) {
             ConsoleUI.printPrompt(label);
@@ -292,11 +348,15 @@ public class UserManagementView {
         }
     }
 
-    private int promptPositiveInteger(String label) {
+    private Integer promptPositiveInteger(String label, boolean optional) {
         while (true) {
             ConsoleUI.printPrompt(label);
+            String input = scanner.nextLine().trim();
+            if (optional && input.isEmpty()) {
+                return null;
+            }
             try {
-                int value = Integer.parseInt(scanner.nextLine().trim());
+                int value = Integer.parseInt(input);
                 if (value > 0) {
                     return value;
                 }
@@ -306,10 +366,32 @@ public class UserManagementView {
         }
     }
 
-    private boolean promptYesNo(String label) {
+    private Integer promptIntegerUpdate(String label, Integer currentValue, boolean optional) {
+        while (true) {
+            String displayVal = currentValue == null ? "-" : String.valueOf(currentValue);
+            ConsoleUI.printPrompt(label + " [" + displayVal + "] (Enter to keep): ");
+            String input = scanner.nextLine().trim();
+            if (input.isEmpty()) {
+                return currentValue;
+            }
+            try {
+                int value = Integer.parseInt(input);
+                if (value > 0) {
+                    return value;
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            ConsoleUI.printError("Enter a positive whole number.");
+        }
+    }
+
+    private boolean promptYesNo(String label, boolean allowBlank) {
         while (true) {
             ConsoleUI.printPrompt(label);
             String input = scanner.nextLine().trim();
+            if (allowBlank && input.isEmpty()) {
+                return false; // Not used currently for bools with blank
+            }
             if (input.equalsIgnoreCase("Y") || input.equalsIgnoreCase("YES")) {
                 return true;
             }

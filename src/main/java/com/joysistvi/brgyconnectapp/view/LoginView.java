@@ -13,6 +13,7 @@ import static com.joysistvi.brgyconnectapp.view.ConsoleUI.printMainBanner;
 
 public class LoginView {
     private final AuthController authController;
+    private final RegistrationView registrationView;
     private final Scanner scanner;
     public static final String RESET = "\u001B[0m";
     public static final String BOLD = "\u001B[1m";
@@ -22,8 +23,9 @@ public class LoginView {
     public static final String BG_MAROON = "\u001B[48;5;52m";
     public static final String WHITE = "\u001B[97m";
 
-    public LoginView(AuthController authController, Scanner scanner) {
+    public LoginView(AuthController authController, RegistrationView registrationView, Scanner scanner) {
         this.authController = authController;
+        this.registrationView = registrationView;
         this.scanner = scanner;
     }
 
@@ -34,6 +36,7 @@ public class LoginView {
             ConsoleUI.printMainBanner();
             System.out.println();
             ConsoleUI.printMenuOption("1", "Log in");
+            ConsoleUI.printMenuOption("2", "Register Account");
             ConsoleUI.printMenuOption("0", "Exit");
             System.out.println();
             ConsoleUI.printPrompt("Choose an option: ");
@@ -50,11 +53,16 @@ public class LoginView {
                         scanner.nextLine();
                     }
                 }
+                case "2" -> {
+                    if (registrationView != null) {
+                        registrationView.show();
+                    }
+                }
                 case "0" -> {
                     return Optional.empty();
                 }
                 default -> {
-                    ConsoleUI.printError("Please enter 1 or 0.");
+                    ConsoleUI.printError("Please enter 1, 2, or 0.");
                     System.out.println();
                     ConsoleUI.printPrompt("Press Enter to continue...");
                     scanner.nextLine();

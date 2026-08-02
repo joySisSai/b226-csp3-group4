@@ -17,10 +17,12 @@ import java.util.function.Function;
 public class ResidentManagementView {
     private final Scanner scanner;
     private final ResidentController residentController;
+    private final com.joysistvi.brgyconnectapp.controller.HouseholdController householdController;
 
-    public ResidentManagementView(Scanner scanner, ResidentController residentController) {
+    public ResidentManagementView(Scanner scanner, ResidentController residentController, com.joysistvi.brgyconnectapp.controller.HouseholdController householdController) {
         this.scanner = scanner;
         this.residentController = residentController;
+        this.householdController = householdController;
     }
 
     public void show(User actingUser) {
@@ -32,8 +34,9 @@ public class ResidentManagementView {
             ConsoleUI.printMenuOption("2", "Search residents");
             ConsoleUI.printMenuOption("3", "View resident details");
             ConsoleUI.printMenuOption("4", "Register resident");
-            ConsoleUI.printMenuOption("5", "Update resident");
-            ConsoleUI.printMenuOption("6", "Deactivate resident");
+            ConsoleUI.printMenuOption("5", "Review pending accounts");
+            ConsoleUI.printMenuOption("6", "Update resident");
+            ConsoleUI.printMenuOption("7", "Deactivate resident");
             ConsoleUI.printMenuOption("0", "Back");
             System.out.println();
             ConsoleUI.printPrompt("Choose an option: ");
@@ -44,8 +47,9 @@ public class ResidentManagementView {
                 case "2" -> searchResidents(actingUser);
                 case "3" -> viewResident(actingUser);
                 case "4" -> registerResident(actingUser);
-                case "5" -> updateResident(actingUser);
-                case "6" -> deactivateResident(actingUser);
+                case "5" -> reviewPendingAccounts(actingUser);
+                case "6" -> updateResident(actingUser);
+                case "7" -> deactivateResident(actingUser);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -87,7 +91,7 @@ public class ResidentManagementView {
             return;
         }
 
-        printResidentDetails(resident);
+        printResidentDetails(resident, actingUser);
     }
 
     private void registerResident(User actingUser) {
@@ -96,25 +100,61 @@ public class ResidentManagementView {
 
         Resident resident = new Resident();
         ConsoleUI.printInfo("The resident code will be generated automatically.");
-        resident.setFirstName(promptRequired("First name: "));
-        resident.setMiddleName(promptOptional("Middle name (optional): "));
-        resident.setLastName(promptRequired("Last name: "));
-        resident.setSuffix(promptOptional("Suffix (optional): "));
-        resident.setBirthDate(promptDate("Birth date (YYYY-MM-DD): ", false, null));
-        resident.setSex(promptEnum("Sex", Sex.values(), false, null));
-        resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
-        resident.setContactNumber(promptValidatedOptional(
-                "Contact number (optional)", null, ResidentFieldValidator::validateContactNumber));
-        resident.setEmail(promptValidatedOptional(
-                "Email (optional)", null, ResidentFieldValidator::validateEmail));
-        resident.setOccupation(promptOptional("Occupation (optional): "));
-        resident.setHouseholdId(promptPositiveInteger("Household ID (optional): ", true));
-        resident.setRegisteredVoter(promptYesNo("Registered voter? (Y/N): ", false, false));
-        resident.setHouseholdHead(promptYesNo("Household head? (Y/N): ", false, false));
         resident.setResidencyStatus(ResidencyStatus.ACTIVE);
+        boolean firstTry = true;
 
-        String result = residentController.register(resident, userId(actingUser));
-        printOperationResult(result);
+        while (true) {
+            if (firstTry) {
+                resident.setFirstName(promptRequired("First name: "));
+                resident.setMiddleName(promptOptional("Middle name (optional): "));
+                resident.setLastName(promptRequired("Last name: "));
+                resident.setSuffix(promptOptional("Suffix (optional): "));
+                resident.setBirthDate(promptDate("Birth date (YYYY-MM-DD): ", false, null));
+                resident.setSex(promptEnum("Sex", Sex.values(), false, null));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
+                resident.setContactNumber(promptValidatedOptional(
+                        "Contact number (optional)", null, ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedOptional(
+                        "Email (optional)", null, ResidentFieldValidator::validateEmail));
+                resident.setOccupation(promptOptional("Occupation (optional): "));
+                resident.setHouseholdId(promptPositiveInteger("Household ID (optional): ", true));
+                resident.setRegisteredVoter(promptYesNo("Registered voter? (Y/N): ", false, false));
+                resident.setHouseholdHead(promptYesNo("Household head? (Y/N): ", false, false));
+            } else {
+                ConsoleUI.printInfo("Press Enter to keep the current value.");
+                resident.setFirstName(promptTextUpdate("First name", resident.getFirstName(), true));
+                resident.setMiddleName(promptTextUpdate("Middle name", resident.getMiddleName(), false));
+                resident.setLastName(promptTextUpdate("Last name", resident.getLastName(), true));
+                resident.setSuffix(promptTextUpdate("Suffix", resident.getSuffix(), false));
+                resident.setBirthDate(promptDate("Birth date", true, resident.getBirthDate()));
+                resident.setSex(promptEnum("Sex", Sex.values(), true, resident.getSex()));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), true, resident.getCivilStatus()));
+                resident.setContactNumber(promptValidatedOptional(
+                        "Contact number", resident.getContactNumber(), ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedOptional(
+                        "Email", resident.getEmail(), ResidentFieldValidator::validateEmail));
+                resident.setOccupation(promptTextUpdate("Occupation", resident.getOccupation(), false));
+                resident.setHouseholdId(promptIntegerUpdate("Household ID", resident.getHouseholdId()));
+                resident.setRegisteredVoter(promptYesNo(
+                        "Registered voter [" + yesNo(resident.isRegisteredVoter()) + "] (Y/N or Enter): ",
+                        true, resident.isRegisteredVoter()));
+                resident.setHouseholdHead(promptYesNo(
+                        "Household head [" + yesNo(resident.isHouseholdHead()) + "] (Y/N or Enter): ",
+                        true, resident.isHouseholdHead()));
+            }
+
+            String result = residentController.register(resident, userId(actingUser));
+            if (result != null && result.toLowerCase().contains("success")) {
+                printOperationResult(result);
+                break;
+            }
+
+            ConsoleUI.printError(result);
+            if (!promptYesNo("Registration failed. Would you like to edit the details and try again? (Y/N): ", false, false)) {
+                break;
+            }
+            firstTry = false;
+        }
     }
 
     private void updateResident(User actingUser) {
@@ -169,7 +209,7 @@ public class ResidentManagementView {
             return;
         }
 
-        printResidentDetails(resident);
+        printResidentDetails(resident, actingUser);
         if (resident.getResidencyStatus() == ResidencyStatus.INACTIVE) {
             ConsoleUI.printInfo("This resident is already inactive.");
             return;
@@ -190,28 +230,72 @@ public class ResidentManagementView {
         return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
+    private void reviewPendingAccounts(User actingUser) {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Pending Resident Accounts");
+
+        List<User> pending = residentController.getPendingAccounts(userId(actingUser));
+        if (pending == null || pending.isEmpty()) {
+            ConsoleUI.printInfo("No pending resident accounts found.");
+            return;
+        }
+
+        TableFormatter formatter = new TableFormatter("ID", "Username", "Display Name", "Resident ID", "Date Registered");
+        for (User u : pending) {
+            formatter.addRow(
+                    String.valueOf(u.getUserId()),
+                    u.getUsername(),
+                    u.getDisplayName(),
+                    u.getResidentId() == null ? "-" : String.valueOf(u.getResidentId()),
+                    u.getCreatedAt() == null ? "-" : u.getCreatedAt().toString()
+            );
+        }
+        formatter.print();
+        System.out.println();
+
+        ConsoleUI.printInfo("1. Approve Account");
+        ConsoleUI.printInfo("2. Reject Account");
+        ConsoleUI.printInfo("0. Back");
+        System.out.println();
+        ConsoleUI.printPrompt("Choose an option: ");
+        String action = scanner.nextLine().trim();
+
+        if ("0".equals(action)) return;
+
+        int targetUserId = promptPositiveInteger("User ID to process: ", false);
+        
+        if ("1".equals(action)) {
+            String result = residentController.approveResidentAccount(targetUserId, userId(actingUser));
+            printOperationResult(result);
+        } else if ("2".equals(action)) {
+            String result = residentController.rejectResidentAccount(targetUserId, userId(actingUser));
+            printOperationResult(result);
+        } else {
+            ConsoleUI.printError("Invalid option.");
+        }
+    }
+
     private void printResidents(List<Resident> residents) {
         if (residents == null || residents.isEmpty()) {
             ConsoleUI.printInfo("No resident records found.");
             return;
         }
 
-        System.out.printf("%-6s %-14s %-30s %-12s %-12s%n",
-                "ID", "Code", "Name", "Status", "Household");
-        System.out.println("-".repeat(82));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Name", "Status", "Household");
         for (Resident resident : residents) {
-            System.out.printf("%-6s %-14s %-30s %-12s %-12s%n",
-                    resident.getResidentId(),
+            formatter.addRow(
+                    String.valueOf(resident.getResidentId()),
                     valueOrDash(resident.getResidentCode()),
                     abbreviate(fullName(resident), 30),
-                    resident.getResidencyStatus(),
-                    resident.getHouseholdId() == null ? "-" : resident.getHouseholdId());
+                    String.valueOf(resident.getResidencyStatus()),
+                    resident.getHouseholdId() == null ? "-" : String.valueOf(resident.getHouseholdId()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(residents.size() + " record(s) found.");
     }
 
-    private void printResidentDetails(Resident resident) {
+    private void printResidentDetails(Resident resident, User actingUser) {
         System.out.printf("Resident ID      : %s%n", resident.getResidentId());
         System.out.printf("Resident Code    : %s%n", valueOrDash(resident.getResidentCode()));
         System.out.printf("Full Name        : %s%n", fullName(resident));
@@ -222,6 +306,16 @@ public class ResidentManagementView {
         System.out.printf("Email            : %s%n", valueOrDash(resident.getEmail()));
         System.out.printf("Occupation       : %s%n", valueOrDash(resident.getOccupation()));
         System.out.printf("Household ID     : %s%n", valueOrDash(resident.getHouseholdId()));
+        
+        String address = "N/A";
+        if (resident.getHouseholdId() != null) {
+            com.joysistvi.brgyconnectapp.model.Household h = householdController.getById(resident.getHouseholdId(), userId(actingUser));
+            if (h != null) {
+                address = h.getAddressLine() + ", " + h.getPurok();
+            }
+        }
+        System.out.printf("Address          : %s%n", address);
+        
         System.out.printf("Registered Voter : %s%n", yesNo(resident.isRegisteredVoter()));
         System.out.printf("Household Head   : %s%n", yesNo(resident.isHouseholdHead()));
         System.out.printf("Residency Status : %s%n", valueOrDash(resident.getResidencyStatus()));

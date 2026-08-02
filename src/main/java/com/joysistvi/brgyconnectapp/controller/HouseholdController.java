@@ -29,6 +29,10 @@ public class HouseholdController {
         return householdService.getHouseholdById(householdId, actingUserId);
     }
 
+    public Household getOwnHousehold(int householdId, int residentId, int actingUserId) {
+        return householdService.getOwnHousehold(householdId, residentId, actingUserId);
+    }
+
     public List<Household> search(String keyword, int actingUserId) {
         return householdService.searchHouseholds(keyword, actingUserId);
     }
@@ -39,7 +43,7 @@ public class HouseholdController {
 
     public String create(Household household, int actingUserId) {
         String result = householdService.createHousehold(household, actingUserId);
-        if ("Household created successfully".equals(result)) {
+        if (result != null && result.startsWith("Household created successfully")) {
             record(actingUserId, "CREATE", household.getHouseholdId(),
                     "Created household " + household.getHouseholdCode() + ".");
         }

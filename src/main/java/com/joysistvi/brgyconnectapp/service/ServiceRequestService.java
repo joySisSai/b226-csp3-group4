@@ -292,6 +292,35 @@ public class ServiceRequestService {
         }
     }
 
+    public String cancelOwnRequest(long requestId, int residentId, int actingUserId) {
+        if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
+            return "Access denied: you can only cancel your own requests";
+        }
+        
+        try {
+            ServiceRequest request = requestRepo.getById(requestId).orElse(null);
+            if (request == null || request.getResidentId() != residentId) {
+                return "Service request not found";
+            }
+            if (request.getStatus() != RequestStatus.PENDING) {
+                return "Only pending requests can be cancelled";
+            }
+
+            boolean updated = requestRepo.updateStatus(
+                    requestId,
+                    request.getStatus(),
+                    RequestStatus.CANCELLED,
+                    "Cancelled by resident",
+                    actingUserId
+            );
+            return updated
+                    ? "Request cancelled successfully"
+                    : "Request status changed before this update; reload the request and try again";
+        } catch (SQLException exception) {
+            return DATABASE_ERROR;
+        }
+    }
+
     private String validateNewOwnRequest(ServiceRequest request) {
         if (request == null) {
             return "Service request information is required";

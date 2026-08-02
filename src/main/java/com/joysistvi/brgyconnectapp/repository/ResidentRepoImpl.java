@@ -25,7 +25,7 @@ public class ResidentRepoImpl implements ResidentRepo {
     @Override
     public List<Resident> getAll() throws SQLException {
         List<Resident> list = new ArrayList<>();
-        String sql = "SELECT * FROM residents ORDER BY last_name, first_name";
+        String sql = "SELECT * FROM residents ORDER BY resident_id";
         try (Connection conn = dbFactory.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
@@ -41,7 +41,7 @@ public class ResidentRepoImpl implements ResidentRepo {
         SELECT *
         FROM residents
         WHERE residency_status = 'ACTIVE'
-        ORDER BY last_name, first_name
+        ORDER BY resident_id
         """;
 
         try (Connection conn = dbFactory.openConnection();
@@ -89,7 +89,7 @@ public class ResidentRepoImpl implements ResidentRepo {
             WHERE first_name LIKE ? 
             OR last_name LIKE ? 
             OR resident_code LIKE ?
-            ORDER BY last_name, first_name
+            ORDER BY resident_id
             """;
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {

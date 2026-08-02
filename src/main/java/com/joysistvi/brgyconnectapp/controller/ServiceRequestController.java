@@ -84,6 +84,24 @@ public class ServiceRequestController {
         return result;
     }
 
+    public String cancelOwnRequest(long requestId, int residentId, int actingUserId) {
+        ServiceRequest existing = requestService.getOwnRequestById(requestId, residentId, actingUserId);
+        String result = requestService.cancelOwnRequest(requestId, residentId, actingUserId);
+        if ("Request cancelled successfully".equals(result) && activityLogService != null) {
+            String requestLabel = existing == null || existing.getRequestNumber() == null
+                    ? String.valueOf(requestId)
+                    : existing.getRequestNumber();
+            activityLogService.record(
+                    actingUserId,
+                    "CANCEL_REQUEST",
+                    "SERVICE_REQUEST",
+                    requestId,
+                    "Resident cancelled pending service request " + requestLabel + "."
+            );
+        }
+        return result;
+    }
+
     public String updateStatus(long requestId,
                                RequestStatus newStatus,
                                String remarks,

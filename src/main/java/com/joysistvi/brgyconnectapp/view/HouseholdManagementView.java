@@ -94,13 +94,34 @@ public class HouseholdManagementView {
     private void createHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Household");
-        Household household = new Household();
-        household.setHouseholdCode(promptRequired("Household code: "));
-        household.setAddressLine(promptRequired("Address: "));
-        household.setPurok(promptRequired("Purok: "));
-        household.setHouseholdStatus(HouseholdStatus.ACTIVE);
 
-        printOperationResult(householdController.create(household, userId(actingUser)));
+        Household household = new Household();
+        ConsoleUI.printInfo("The household code will be generated automatically.");
+        household.setHouseholdStatus(HouseholdStatus.ACTIVE);
+        boolean firstTry = true;
+
+        while (true) {
+            if (firstTry) {
+                household.setAddressLine(promptRequired("Address: "));
+                household.setPurok(promptRequired("Purok: "));
+            } else {
+                ConsoleUI.printInfo("Press Enter to keep the current value.");
+                household.setAddressLine(promptTextUpdate("Address", household.getAddressLine()));
+                household.setPurok(promptTextUpdate("Purok", household.getPurok()));
+            }
+
+            String result = householdController.create(household, userId(actingUser));
+            if (result != null && result.toLowerCase().contains("success")) {
+                printOperationResult(result);
+                break;
+            }
+
+            ConsoleUI.printError(result);
+            if (!promptYesNo("Registration failed. Would you like to edit your inputs and try again? (Y/N): ")) {
+                break;
+            }
+            firstTry = false;
+        }
     }
 
     private void updateHousehold(User actingUser) {
@@ -221,17 +242,16 @@ public class HouseholdManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-16s %-18s %-36s %-10s%n",
-                "ID", "Code", "Purok", "Address", "Status");
-        System.out.println("-".repeat(92));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Purok", "Address", "Status");
         for (Household household : households) {
-            System.out.printf("%-6s %-16s %-18s %-36s %-10s%n",
-                    household.getHouseholdId(),
+            formatter.addRow(
+                    String.valueOf(household.getHouseholdId()),
                     abbreviate(household.getHouseholdCode(), 16),
                     abbreviate(household.getPurok(), 18),
                     abbreviate(household.getAddressLine(), 36),
-                    household.getHouseholdStatus());
+                    String.valueOf(household.getHouseholdStatus()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(households.size() + " record(s) found.");
     }
@@ -250,15 +270,15 @@ public class HouseholdManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-14s %-34s %-10s%n", "ID", "Code", "Name", "Role");
-        System.out.println("-".repeat(70));
+        TableFormatter formatter = new TableFormatter("ID", "Code", "Name", "Role");
         for (Resident resident : members) {
-            System.out.printf("%-6s %-14s %-34s %-10s%n",
-                    resident.getResidentId(),
+            formatter.addRow(
+                    String.valueOf(resident.getResidentId()),
                     valueOrDash(resident.getResidentCode()),
                     abbreviate(fullName(resident), 34),
                     resident.isHouseholdHead() ? "Head" : "Member");
         }
+        formatter.print();
         System.out.println();
     }
 
