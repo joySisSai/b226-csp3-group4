@@ -33,7 +33,7 @@ public class HouseholdRepoImpl implements HouseholdRepo {
 
     @Override
     public List<Household> getAll() throws SQLException {
-        String sql = "SELECT " + HOUSEHOLD_COLUMNS + " FROM households ORDER BY household_code";
+        String sql = "SELECT " + HOUSEHOLD_COLUMNS + " FROM households ORDER BY household_id";
         List<Household> households = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
              Statement statement = connection.createStatement();
@@ -74,7 +74,7 @@ public class HouseholdRepoImpl implements HouseholdRepo {
         String sql = "SELECT " + HOUSEHOLD_COLUMNS + """
                 FROM households
                 WHERE household_code LIKE ? OR address_line LIKE ? OR purok LIKE ?
-                ORDER BY household_code
+                ORDER BY household_id
                 """;
         List<Household> households = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
@@ -94,26 +94,62 @@ public class HouseholdRepoImpl implements HouseholdRepo {
 
     @Override
     public boolean save(Household household) throws SQLException {
-        String sql = """
+        String insertSql = """
                 INSERT INTO households (
                     household_code, address_line, purok, household_status
                 ) VALUES (?, ?, ?, ?)
                 """;
-        try (Connection connection = connectionFactory.openConnection();
-             PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            statement.setString(1, household.getHouseholdCode());
-            statement.setString(2, household.getAddressLine());
-            statement.setString(3, household.getPurok());
-            statement.setString(4, household.getHouseholdStatus().name());
-            if (statement.executeUpdate() == 0) {
-                return false;
-            }
-            try (ResultSet keys = statement.getGeneratedKeys()) {
-                if (keys.next()) {
-                    household.setHouseholdId(keys.getInt(1));
+        String assignCodeSql = "UPDATE households SET household_code = ? WHERE household_id = ?";
+
+        try (Connection connection = connectionFactory.openConnection()) {
+            boolean originalAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            try {
+                int householdId;
+                int registrationYear = java.time.LocalDate.now().getYear();
+                String temporaryCode = "HH-%04d-%d".formatted(
+                        registrationYear,
+                        java.util.concurrent.ThreadLocalRandom.current().nextLong(
+                                1_000_000_000_000_000_000L,
+                                Long.MAX_VALUE));
+
+                try (PreparedStatement statement = connection.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                    statement.setString(1, temporaryCode);
+                    statement.setString(2, household.getAddressLine());
+                    statement.setString(3, household.getPurok());
+                    statement.setString(4, household.getHouseholdStatus().name());
+                    if (statement.executeUpdate() == 0) {
+                        connection.rollback();
+                        return false;
+                    }
+                    try (ResultSet keys = statement.getGeneratedKeys()) {
+                        if (keys.next()) {
+                            householdId = keys.getInt(1);
+                        } else {
+                            throw new SQLException("Database did not return the generated household ID");
+                        }
+                    }
                 }
+
+                String householdCode = String.format("HH-%04d-%07d", registrationYear, householdId);
+                try (PreparedStatement statement = connection.prepareStatement(assignCodeSql)) {
+                    statement.setString(1, householdCode);
+                    statement.setInt(2, householdId);
+                    if (statement.executeUpdate() != 1) {
+                        throw new SQLException("Unable to assign the generated household code");
+                    }
+                }
+
+                connection.commit();
+                household.setHouseholdId(householdId);
+                household.setHouseholdCode(householdCode);
+                return true;
+            } catch (SQLException | RuntimeException exception) {
+                connection.rollback();
+                throw exception;
+            } finally {
+                connection.setAutoCommit(originalAutoCommit);
             }
-            return true;
         }
     }
 

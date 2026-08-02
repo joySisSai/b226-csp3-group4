@@ -95,7 +95,7 @@ public class HouseholdManagementView {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Household");
         Household household = new Household();
-        household.setHouseholdCode(promptRequired("Household code: "));
+        ConsoleUI.printInfo("The household code will be generated automatically.");
         household.setAddressLine(promptRequired("Address: "));
         household.setPurok(promptRequired("Purok: "));
         household.setHouseholdStatus(HouseholdStatus.ACTIVE);
