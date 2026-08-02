@@ -98,25 +98,61 @@ public class ResidentManagementView {
 
         Resident resident = new Resident();
         ConsoleUI.printInfo("The resident code will be generated automatically.");
-        resident.setFirstName(promptRequired("First name: "));
-        resident.setMiddleName(promptOptional("Middle name (optional): "));
-        resident.setLastName(promptRequired("Last name: "));
-        resident.setSuffix(promptOptional("Suffix (optional): "));
-        resident.setBirthDate(promptDate("Birth date (YYYY-MM-DD): ", false, null));
-        resident.setSex(promptEnum("Sex", Sex.values(), false, null));
-        resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
-        resident.setContactNumber(promptValidatedOptional(
-                "Contact number (optional)", null, ResidentFieldValidator::validateContactNumber));
-        resident.setEmail(promptValidatedOptional(
-                "Email (optional)", null, ResidentFieldValidator::validateEmail));
-        resident.setOccupation(promptOptional("Occupation (optional): "));
-        resident.setHouseholdId(promptPositiveInteger("Household ID (optional): ", true));
-        resident.setRegisteredVoter(promptYesNo("Registered voter? (Y/N): ", false, false));
-        resident.setHouseholdHead(promptYesNo("Household head? (Y/N): ", false, false));
         resident.setResidencyStatus(ResidencyStatus.ACTIVE);
+        boolean firstTry = true;
 
-        String result = residentController.register(resident, userId(actingUser));
-        printOperationResult(result);
+        while (true) {
+            if (firstTry) {
+                resident.setFirstName(promptRequired("First name: "));
+                resident.setMiddleName(promptOptional("Middle name (optional): "));
+                resident.setLastName(promptRequired("Last name: "));
+                resident.setSuffix(promptOptional("Suffix (optional): "));
+                resident.setBirthDate(promptDate("Birth date (YYYY-MM-DD): ", false, null));
+                resident.setSex(promptEnum("Sex", Sex.values(), false, null));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
+                resident.setContactNumber(promptValidatedOptional(
+                        "Contact number (optional)", null, ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedOptional(
+                        "Email (optional)", null, ResidentFieldValidator::validateEmail));
+                resident.setOccupation(promptOptional("Occupation (optional): "));
+                resident.setHouseholdId(promptPositiveInteger("Household ID (optional): ", true));
+                resident.setRegisteredVoter(promptYesNo("Registered voter? (Y/N): ", false, false));
+                resident.setHouseholdHead(promptYesNo("Household head? (Y/N): ", false, false));
+            } else {
+                ConsoleUI.printInfo("Press Enter to keep the current value.");
+                resident.setFirstName(promptTextUpdate("First name", resident.getFirstName(), true));
+                resident.setMiddleName(promptTextUpdate("Middle name", resident.getMiddleName(), false));
+                resident.setLastName(promptTextUpdate("Last name", resident.getLastName(), true));
+                resident.setSuffix(promptTextUpdate("Suffix", resident.getSuffix(), false));
+                resident.setBirthDate(promptDate("Birth date", true, resident.getBirthDate()));
+                resident.setSex(promptEnum("Sex", Sex.values(), true, resident.getSex()));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), true, resident.getCivilStatus()));
+                resident.setContactNumber(promptValidatedOptional(
+                        "Contact number", resident.getContactNumber(), ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedOptional(
+                        "Email", resident.getEmail(), ResidentFieldValidator::validateEmail));
+                resident.setOccupation(promptTextUpdate("Occupation", resident.getOccupation(), false));
+                resident.setHouseholdId(promptIntegerUpdate("Household ID", resident.getHouseholdId()));
+                resident.setRegisteredVoter(promptYesNo(
+                        "Registered voter [" + yesNo(resident.isRegisteredVoter()) + "] (Y/N or Enter): ",
+                        true, resident.isRegisteredVoter()));
+                resident.setHouseholdHead(promptYesNo(
+                        "Household head [" + yesNo(resident.isHouseholdHead()) + "] (Y/N or Enter): ",
+                        true, resident.isHouseholdHead()));
+            }
+
+            String result = residentController.register(resident, userId(actingUser));
+            if (result != null && result.toLowerCase().contains("success")) {
+                printOperationResult(result);
+                break;
+            }
+
+            ConsoleUI.printError(result);
+            if (!promptYesNo("Registration failed. Would you like to edit the details and try again? (Y/N): ", false, false)) {
+                break;
+            }
+            firstTry = false;
+        }
     }
 
     private void updateResident(User actingUser) {

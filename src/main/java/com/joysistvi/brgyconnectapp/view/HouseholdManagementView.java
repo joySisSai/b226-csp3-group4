@@ -94,13 +94,34 @@ public class HouseholdManagementView {
     private void createHousehold(User actingUser) {
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Create Household");
+
         Household household = new Household();
         ConsoleUI.printInfo("The household code will be generated automatically.");
-        household.setAddressLine(promptRequired("Address: "));
-        household.setPurok(promptRequired("Purok: "));
         household.setHouseholdStatus(HouseholdStatus.ACTIVE);
+        boolean firstTry = true;
 
-        printOperationResult(householdController.create(household, userId(actingUser)));
+        while (true) {
+            if (firstTry) {
+                household.setAddressLine(promptRequired("Address: "));
+                household.setPurok(promptRequired("Purok: "));
+            } else {
+                ConsoleUI.printInfo("Press Enter to keep the current value.");
+                household.setAddressLine(promptTextUpdate("Address", household.getAddressLine()));
+                household.setPurok(promptTextUpdate("Purok", household.getPurok()));
+            }
+
+            String result = householdController.create(household, userId(actingUser));
+            if (result != null && result.toLowerCase().contains("success")) {
+                printOperationResult(result);
+                break;
+            }
+
+            ConsoleUI.printError(result);
+            if (!promptYesNo("Registration failed. Would you like to edit your inputs and try again? (Y/N): ")) {
+                break;
+            }
+            firstTry = false;
+        }
     }
 
     private void updateHousehold(User actingUser) {
