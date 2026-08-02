@@ -23,8 +23,6 @@ public class Resident {
     private LocalDate dateRegistered;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private boolean active;
-
     public Resident() {
     }
 
@@ -66,7 +64,5 @@ public class Resident {
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
-    public boolean isActive() { return active; }
-    public void setActive(boolean active) { this.active = active; }
 }
  

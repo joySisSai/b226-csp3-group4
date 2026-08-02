@@ -1,38 +1,41 @@
 package com.joysistvi.brgyconnectapp.repository;
 
 import com.joysistvi.brgyconnectapp.config.ConnectionFactory;
-import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.model.CivilStatus;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.ResidencyStatus;
 import com.joysistvi.brgyconnectapp.model.Sex;
+import com.joysistvi.brgyconnectapp.validation.ResidentFieldValidator;
 
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class ResidentRepoImpl implements ResidentRepo {
-    private final ConnectionFactory dbFactory = new DbConnection();
+    private final ConnectionFactory dbFactory;
+
+    public ResidentRepoImpl(ConnectionFactory dbFactory) {
+        this.dbFactory = dbFactory;
+    }
 
     // Get all residents with proper error logging
     @Override
-    public List<Resident> getAll() {
+    public List<Resident> getAll() throws SQLException {
         List<Resident> list = new ArrayList<>();
         String sql = "SELECT * FROM residents ORDER BY last_name, first_name";
         try (Connection conn = dbFactory.openConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
             while (rs.next()) list.add(mapToResident(rs));
-        } catch (SQLException e) {
-            System.err.println("Error fetching residents: " + e.getMessage());
         }
         return list;
     }
 
     @Override
-    public List<Resident> getAllActive() {
+    public List<Resident> getAllActive() throws SQLException {
         List<Resident> residents = new ArrayList<>();
         String sql = """
         SELECT *
@@ -48,8 +51,6 @@ public class ResidentRepoImpl implements ResidentRepo {
             while (rs.next()) {
                 residents.add(mapToResident(rs));
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching active residents: " + e.getMessage());
         }
 
         return residents;
@@ -57,37 +58,31 @@ public class ResidentRepoImpl implements ResidentRepo {
 
     // Get one resident using their primary key ID
     @Override
-    public Optional<Resident> getById(int id) {
+    public Optional<Resident> getById(int id) throws SQLException {
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM residents WHERE resident_id = ?")) {
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(mapToResident(rs)) : Optional.empty();
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching resident by ID: " + e.getMessage());
         }
-        return Optional.empty();
     }
 
     // Get one resident using their unique resident code
     @Override
-    public Optional<Resident> getByCode(String code) {
+    public Optional<Resident> getByCode(String code) throws SQLException {
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement("SELECT * FROM residents WHERE resident_code = ?")) {
             stmt.setString(1, code);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next() ? Optional.of(mapToResident(rs)) : Optional.empty();
             }
-        } catch (SQLException e) {
-            System.err.println("Error fetching resident by code: " + e.getMessage());
         }
-        return Optional.empty();
     }
 
     // Search for residents — matches first name, last name, or resident code
     @Override
-    public List<Resident> searchByNameOrCode(String keyword) {
+    public List<Resident> searchByNameOrCode(String keyword) throws SQLException {
         List<Resident> list = new ArrayList<>();
         String sql = """
             SELECT * FROM residents 
@@ -105,53 +100,90 @@ public class ResidentRepoImpl implements ResidentRepo {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) list.add(mapToResident(rs));
             }
-        } catch (SQLException e) {
-            System.err.println("Error searching residents: " + e.getMessage());
         }
         return list;
     }
 
-    // Save new resident — first checks if the code already exists to avoid duplicates
+    // Save a resident and derive its immutable code from the database-generated ID.
     @Override
-    public boolean save(Resident resident) {
-        if (getByCode(resident.getResidentCode()).isPresent()) return false;
-        String sql = """
+    public boolean save(Resident resident) throws SQLException {
+        String insertSql = """
             INSERT INTO residents (
                 resident_code, household_id, suffix, first_name, middle_name, last_name,
                 birth_date, sex, civil_status, residency_status, email, occupation,
                 is_registered_voter, is_household_head, contact_number, date_registered
             ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, NOW())
             """;
-        try (Connection conn = dbFactory.openConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, resident.getResidentCode());
-            stmt.setObject(2, resident.getHouseholdId());
-            stmt.setString(3, resident.getSuffix());
-            stmt.setString(4, resident.getFirstName());
-            stmt.setString(5, resident.getMiddleName());
-            stmt.setString(6, resident.getLastName());
-            stmt.setDate(7, Date.valueOf(resident.getBirthDate()));
-            stmt.setString(8, resident.getSex().name());
-            stmt.setString(9, resident.getCivilStatus().name());
-            stmt.setString(10, resident.getResidencyStatus().name());
-            stmt.setString(11, resident.getEmail());
-            stmt.setString(12, resident.getOccupation());
-            stmt.setBoolean(13, resident.isRegisteredVoter());
-            stmt.setBoolean(14, resident.isHouseholdHead());
-            stmt.setString(15, resident.getContactNumber());
-            return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Save error: " + e.getMessage());
+        String assignCodeSql = "UPDATE residents SET resident_code = ? WHERE resident_id = ?";
+
+        try (Connection conn = dbFactory.openConnection()) {
+            boolean originalAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                int residentId;
+                int registrationYear = ResidentFieldValidator.currentResidentCodeYear();
+                String temporaryCode = "RES-%04d-%d".formatted(
+                        registrationYear,
+                        ThreadLocalRandom.current().nextLong(
+                                1_000_000_000_000_000_000L,
+                                Long.MAX_VALUE));
+
+                try (PreparedStatement stmt = conn.prepareStatement(insertSql, Statement.RETURN_GENERATED_KEYS)) {
+                    stmt.setString(1, temporaryCode);
+                    stmt.setObject(2, resident.getHouseholdId());
+                    stmt.setString(3, resident.getSuffix());
+                    stmt.setString(4, resident.getFirstName());
+                    stmt.setString(5, resident.getMiddleName());
+                    stmt.setString(6, resident.getLastName());
+                    stmt.setDate(7, Date.valueOf(resident.getBirthDate()));
+                    stmt.setString(8, resident.getSex().name());
+                    stmt.setString(9, resident.getCivilStatus().name());
+                    stmt.setString(10, resident.getResidencyStatus().name());
+                    stmt.setString(11, resident.getEmail());
+                    stmt.setString(12, resident.getOccupation());
+                    stmt.setBoolean(13, resident.isRegisteredVoter());
+                    stmt.setBoolean(14, resident.isHouseholdHead());
+                    stmt.setString(15, resident.getContactNumber());
+                    if (stmt.executeUpdate() == 0) {
+                        conn.rollback();
+                        return false;
+                    }
+
+                    try (ResultSet keys = stmt.getGeneratedKeys()) {
+                        if (!keys.next()) {
+                            throw new SQLException("Database did not return the generated resident ID");
+                        }
+                        residentId = keys.getInt(1);
+                    }
+                }
+
+                String residentCode = ResidentFieldValidator.generateResidentCode(residentId, registrationYear);
+                try (PreparedStatement stmt = conn.prepareStatement(assignCodeSql)) {
+                    stmt.setString(1, residentCode);
+                    stmt.setInt(2, residentId);
+                    if (stmt.executeUpdate() != 1) {
+                        throw new SQLException("Unable to assign the generated resident code");
+                    }
+                }
+
+                conn.commit();
+                resident.setResidentId(residentId);
+                resident.setResidentCode(residentCode);
+                return true;
+            } catch (SQLException | RuntimeException exception) {
+                conn.rollback();
+                throw exception;
+            } finally {
+                conn.setAutoCommit(originalAutoCommit);
+            }
         }
-        return false;
     }
 
     // Update an existing resident's information
     @Override
-    public boolean update(Resident resident) {
+    public boolean update(Resident resident) throws SQLException {
         String sql = """
         UPDATE residents SET
-            resident_code = ?,
             first_name = ?,
             middle_name = ?,
             last_name = ?,
@@ -173,42 +205,35 @@ public class ResidentRepoImpl implements ResidentRepo {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             // Set values in EXACT order matching the SQL above
-            stmt.setString(1, resident.getResidentCode());
-            stmt.setString(2, resident.getFirstName());
-            stmt.setString(3, resident.getMiddleName());
-            stmt.setString(4, resident.getLastName());
-            stmt.setString(5, resident.getSuffix());
-            stmt.setDate(6, Date.valueOf(resident.getBirthDate()));
-            stmt.setString(7, resident.getSex().name());
-            stmt.setString(8, resident.getCivilStatus().name());
-            stmt.setString(9, resident.getResidencyStatus().name());
-            stmt.setString(10, resident.getContactNumber());
-            stmt.setString(11, resident.getEmail());
-            stmt.setObject(12, resident.getHouseholdId());
-            stmt.setString(13, resident.getOccupation());
-            stmt.setBoolean(14, resident.isRegisteredVoter());
-            stmt.setBoolean(15, resident.isHouseholdHead());
-            stmt.setInt(16, resident.getResidentId());
+            stmt.setString(1, resident.getFirstName());
+            stmt.setString(2, resident.getMiddleName());
+            stmt.setString(3, resident.getLastName());
+            stmt.setString(4, resident.getSuffix());
+            stmt.setDate(5, Date.valueOf(resident.getBirthDate()));
+            stmt.setString(6, resident.getSex().name());
+            stmt.setString(7, resident.getCivilStatus().name());
+            stmt.setString(8, resident.getResidencyStatus().name());
+            stmt.setString(9, resident.getContactNumber());
+            stmt.setString(10, resident.getEmail());
+            stmt.setObject(11, resident.getHouseholdId());
+            stmt.setString(12, resident.getOccupation());
+            stmt.setBoolean(13, resident.isRegisteredVoter());
+            stmt.setBoolean(14, resident.isHouseholdHead());
+            stmt.setInt(15, resident.getResidentId());
 
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Error updating resident: " + e.getMessage());
         }
-        return false;
     }
 
     /// Soft delete: set status to INACTIVE instead of removing record
     @Override
-    public boolean deactivate(int id) {
+    public boolean deactivate(int id) throws SQLException {
         String sql = "UPDATE residents SET residency_status = 'INACTIVE', updated_at = NOW() WHERE resident_id = ?";
         try (Connection conn = dbFactory.openConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setInt(1, id);
             return stmt.executeUpdate() > 0;
-        } catch (SQLException e) {
-            System.err.println("Deactivate error: " + e.getMessage());
         }
-        return false;
     }
 
     // Convert database result row into a Resident object

@@ -1,18 +1,22 @@
 package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
+import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
 import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.service.DataAccessException;
 
 import java.util.Scanner;
 
 public class ResidentDashboard {
     private final Scanner scanner;
     private final ResidentController residentController;
+    private final ResidentServiceRequestView requestView;
 
-    public ResidentDashboard(Scanner scanner) {
+    public ResidentDashboard(Scanner scanner, ResidentController residentController, ServiceRequestController requestController) {
         this.scanner = scanner;
-        this.residentController = new ResidentController();
+        this.residentController = residentController;
+        this.requestView = new ResidentServiceRequestView(scanner, requestController);
     }
 
     public void show(User user) {
@@ -28,21 +32,25 @@ public class ResidentDashboard {
             ConsoleUI.printPrompt("Select option: ");
             choice = scanner.nextLine().trim();
 
-            switch (choice) {
-                case "1":
-                    viewMyProfile(user);
-                    break;
-                case "2":
-                    //new SubmitServiceRequestView(scanner).show(user);
-                    break;
-                case "3":
-                    ConsoleUI.printInfo("Feature coming soon");
-                    break;
-                case "0":
-                    ConsoleUI.printSuccess("Logged out");
-                    break;
-                default:
-                    ConsoleUI.printError("Invalid choice");
+            try {
+                switch (choice) {
+                    case "1":
+                        viewMyProfile(user);
+                        break;
+                    case "2":
+                        requestView.showSubmit(user);
+                        break;
+                    case "3":
+                        requestView.showCheckStatus(user);
+                        break;
+                    case "0":
+                        ConsoleUI.printSuccess("Logged out");
+                        break;
+                    default:
+                        ConsoleUI.printError("Invalid choice");
+                }
+            } catch (DataAccessException exception) {
+                ConsoleUI.printError(exception.getMessage());
             }
             if (!choice.equals("0")) {
                 ConsoleUI.printPrompt("\nPress Enter to continue...");
@@ -68,7 +76,8 @@ public class ResidentDashboard {
             return;
         }
 
-        Resident resident = residentController.getById(residentId);
+        int actingUserId = user.getUserId() == null ? 0 : user.getUserId();
+        Resident resident = residentController.getOwnProfile(residentId, actingUserId);
 
         if (resident == null) {
             ConsoleUI.printError("Resident profile not found.");

@@ -1,14 +1,36 @@
 package com.joysistvi.brgyconnectapp.view;
 
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.service.DataAccessException;
 
 import java.util.Scanner;
 
 public class AdminDashboard {
     private final Scanner scanner;
+    private final ResidentManagementView residentManagementView;
+    private final HouseholdManagementView householdManagementView;
+    private final ServiceRequestManagementView serviceRequestManagementView;
+    private final ReportView reportView;
+    private final ServiceTypeManagementView serviceTypeManagementView;
+    private final UserManagementView userManagementView;
+    private final ActivityLogView activityLogView;
 
-    public AdminDashboard(Scanner scanner) {
+    public AdminDashboard(Scanner scanner,
+                          ResidentManagementView residentManagementView,
+                          HouseholdManagementView householdManagementView,
+                          ServiceRequestManagementView serviceRequestManagementView,
+                          ReportView reportView,
+                          ServiceTypeManagementView serviceTypeManagementView,
+                          UserManagementView userManagementView,
+                          ActivityLogView activityLogView) {
         this.scanner = scanner;
+        this.residentManagementView = residentManagementView;
+        this.householdManagementView = householdManagementView;
+        this.serviceRequestManagementView = serviceRequestManagementView;
+        this.reportView = reportView;
+        this.serviceTypeManagementView = serviceTypeManagementView;
+        this.userManagementView = userManagementView;
+        this.activityLogView = activityLogView;
     }
 
     public void show(User user) {
@@ -19,7 +41,7 @@ public class AdminDashboard {
             ConsoleUI.printSubHeader("Staff Operations");
             ConsoleUI.printMenuOption("1", "Manage resident records");
             ConsoleUI.printMenuOption("2", "Manage household records");
-            ConsoleUI.printMenuOption("3", "Search records");
+            ConsoleUI.printMenuOption("3", "Search service requests");
             ConsoleUI.printMenuOption("4", "Create service request");
             ConsoleUI.printMenuOption("5", "Update request status");
             ConsoleUI.printMenuOption("6", "View request history");
@@ -34,12 +56,27 @@ public class AdminDashboard {
             ConsoleUI.printPrompt("Choose an option: ");
             choice = scanner.nextLine().trim();
 
-            if (!choice.equals("0")) {
-                System.out.println();
-                ConsoleUI.printInfo("This feature is not implemented yet.");
-                System.out.println();
-                ConsoleUI.printPrompt("Press Enter to continue...");
-                scanner.nextLine();
+            try {
+                switch (choice) {
+                    case "1" -> residentManagementView.show(user);
+                    case "2" -> householdManagementView.show(user);
+                    case "3" -> serviceRequestManagementView.searchRequests(user);
+                    case "4" -> serviceRequestManagementView.createRequest(user);
+                    case "5" -> serviceRequestManagementView.updateRequestStatus(user);
+                    case "6" -> serviceRequestManagementView.viewRequestHistory(user);
+                    case "7" -> reportView.show(user);
+                    case "8" -> serviceTypeManagementView.show(user);
+                    case "9" -> userManagementView.show(user);
+                    case "10" -> activityLogView.show(user);
+                    case "0" -> { }
+                    default -> {
+                        ConsoleUI.printError("Please choose a valid menu option.");
+                        pause();
+                    }
+                }
+            } catch (DataAccessException exception) {
+                ConsoleUI.printError(exception.getMessage());
+                pause();
             }
         } while (!choice.equals("0"));
 
@@ -55,5 +92,11 @@ public class AdminDashboard {
         ConsoleUI.printHeader("Admin Dashboard");
         System.out.println(ConsoleUI.CYAN + " Welcome, " + ConsoleUI.BOLD + user.getDisplayName() + "!" + ConsoleUI.RESET);
         System.out.println();
+    }
+
+    private void pause() {
+        System.out.println();
+        ConsoleUI.printPrompt("Press Enter to continue...");
+        scanner.nextLine();
     }
 }
