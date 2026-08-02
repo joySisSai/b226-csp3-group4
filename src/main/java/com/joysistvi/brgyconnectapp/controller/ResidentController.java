@@ -36,7 +36,7 @@ public class ResidentController {
     }
     public String register(Resident resident, int actingUserId) {
         String result = service.addResident(resident, actingUserId);
-        if ("Resident added successfully".equals(result)) {
+        if (result != null && result.startsWith("Resident added successfully")) {
             record(actingUserId, "CREATE", resident.getResidentId(),
                     "Created resident record " + resident.getResidentCode() + ".");
         }

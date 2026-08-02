@@ -88,16 +88,12 @@ public class HouseholdService {
         }
 
         try {
-            if (householdRepo.getByCode(household.getHouseholdCode().trim()).isPresent()) {
-                return "Household code already exists";
-            }
-            household.setHouseholdCode(household.getHouseholdCode().trim());
             return householdRepo.save(household)
-                    ? "Household created successfully"
+                    ? "Household created successfully. Household code: " + household.getHouseholdCode()
                     : "Failed to create household";
         } catch (SQLException exception) {
             return DatabaseErrors.isConstraintViolation(exception)
-                    ? "Household code already exists"
+                    ? "Household information conflicts with an existing record"
                     : DATABASE_ERROR;
         }
     }
@@ -241,10 +237,12 @@ public class HouseholdService {
         if (requireId && (household.getHouseholdId() == null || household.getHouseholdId() <= 0)) {
             return "Invalid household ID";
         }
-        if (isBlank(household.getHouseholdCode()) ||
-                isBlank(household.getAddressLine()) ||
+        if (requireId && isBlank(household.getHouseholdCode())) {
+            return "Household code is required";
+        }
+        if (isBlank(household.getAddressLine()) ||
                 isBlank(household.getPurok())) {
-            return "Household code, address, and purok are required";
+            return "Address and purok are required";
         }
         if (household.getHouseholdStatus() == null) {
             return "Household status is required";
