@@ -102,11 +102,20 @@ mvn compile exec:java -Dexec.mainClass=com.joysistvi.brgyconnectapp.BarangayConn
 
 When placing the CMD command in a `.bat` file, use `%%A` and `%%B` instead of `%A` and `%B`.
 
+### Running the Executable JAR
+
+Once built using `mvn clean package`, the application produces an executable "fat JAR" containing all required dependencies. You can run it directly with Java:
+
+```powershell
+java -jar target/BarangayConnectApp-1.0-SNAPSHOT.jar
+```
+*(Remember to load `.env` into your environment first, as shown in the previous steps).*
+
 At startup, the application validates its configuration and database connection. It exits with a safe diagnostic if required configuration is missing or MySQL is unavailable.
 
-## Build verification
+## Build verification and Testing
 
-Run the build from the project directory containing `pom.xml`.
+Run the build and tests from the project directory containing `pom.xml`.
 
 PowerShell:
 
@@ -122,4 +131,4 @@ cd /d "C:\path\to\BarangayConnectApp"
 mvn clean package
 ```
 
-A successful build creates `target/BarangayConnectApp-1.0-SNAPSHOT.jar`. If Maven reports that no POM was found, check that the current directory contains `pom.xml` before running the command.
+A successful build runs the automated JUnit 5 test suite and creates `target/BarangayConnectApp-1.0-SNAPSHOT.jar`. If Maven reports that no POM was found, check that the current directory contains `pom.xml` before running the command.
