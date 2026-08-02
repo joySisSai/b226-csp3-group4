@@ -25,8 +25,7 @@ public class ServiceRequestManagementView {
         ConsoleUI.printInfo("Leave the search blank to show the 100 most recent requests.");
         ConsoleUI.printPrompt("Request number, resident code, or resident name: ");
         String keyword = scanner.nextLine().trim();
-        printRequests(requestController.search(keyword, userId(user)));
-        pause();
+        viewPaginatedRequests(keyword, user);
     }
 
     public void createRequest(User user) {
@@ -151,25 +150,61 @@ public class ServiceRequestManagementView {
         return user == null || user.getUserId() == null ? 0 : user.getUserId();
     }
 
-    private void printRequests(List<ServiceRequest> requests) {
-        if (requests == null || requests.isEmpty()) {
-            ConsoleUI.printInfo("No service requests found.");
-            return;
-        }
+    private void viewPaginatedRequests(String keyword, User user) {
+        int page = 1;
+        int pageSize = 10;
 
-        TableFormatter formatter = new TableFormatter("ID", "Request Number", "Resident", "Service", "Status", "Date");
-        for (ServiceRequest request : requests) {
-            formatter.addRow(
-                    String.valueOf(request.getRequestId()),
-                    request.getRequestNumber(),
-                    String.valueOf(request.getResidentId()),
-                    String.valueOf(request.getServiceTypeId()),
-                    String.valueOf(request.getStatus()),
-                    String.valueOf(request.getRequestDate()));
+        while (true) {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("Service Requests - Page " + page);
+            List<ServiceRequest> requests = requestController.search(keyword, (page - 1) * pageSize, pageSize, userId(user));
+
+            if (requests.isEmpty() && page == 1) {
+                ConsoleUI.printInfo("No service requests found.");
+                pause();
+                break;
+            }
+
+            if (!requests.isEmpty()) {
+                TableFormatter formatter = new TableFormatter("ID", "Request Number", "Resident", "Service", "Status", "Date");
+                for (ServiceRequest request : requests) {
+                    formatter.addRow(
+                            String.valueOf(request.getRequestId()),
+                            request.getRequestNumber(),
+                            String.valueOf(request.getResidentId()),
+                            String.valueOf(request.getServiceTypeId()),
+                            String.valueOf(request.getStatus()),
+                            String.valueOf(request.getRequestDate()));
+                }
+                formatter.print();
+            }
+
+            System.out.println();
+            ConsoleUI.printInfo("N - Next Page | P - Previous Page | Q - Quit to Menu");
+            ConsoleUI.printPrompt("Choose an option: ");
+            String opt = scanner.nextLine().trim().toUpperCase();
+
+            if (opt.equals("N")) {
+                if (requests.size() == pageSize) {
+                    page++;
+                } else {
+                    ConsoleUI.printInfo("You are already on the last page.");
+                    pause();
+                }
+            } else if (opt.equals("P")) {
+                if (page > 1) {
+                    page--;
+                } else {
+                    ConsoleUI.printInfo("You are already on the first page.");
+                    pause();
+                }
+            } else if (opt.equals("Q") || opt.equals("0")) {
+                break;
+            } else {
+                ConsoleUI.printError("Invalid option.");
+                pause();
+            }
         }
-        formatter.print();
-        System.out.println();
-        ConsoleUI.printInfo(requests.size() + " request(s) found.");
     }
 
     private void printRequestDetails(ServiceRequest request) {

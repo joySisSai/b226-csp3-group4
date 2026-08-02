@@ -78,7 +78,8 @@ public class ActivityLogRepoImpl implements ActivityLogRepo {
                                     String entityType,
                                     LocalDate dateFrom,
                                     LocalDate dateTo,
-                                    int maximumRows) throws SQLException {
+                                    int offset,
+                                    int limit) throws SQLException {
         StringBuilder sql = new StringBuilder("""
                 SELECT al.activity_log_id, al.user_id, al.action, al.entity_type,
                        al.entity_id, al.description, al.created_at,
@@ -109,8 +110,9 @@ public class ActivityLogRepoImpl implements ActivityLogRepo {
             sql.append(" AND al.created_at < ?");
             parameters.add(Timestamp.valueOf(dateTo.plusDays(1).atStartOfDay()));
         }
-        sql.append(" ORDER BY al.created_at DESC, al.activity_log_id DESC LIMIT ?");
-        parameters.add(maximumRows);
+        sql.append(" ORDER BY al.created_at DESC, al.activity_log_id DESC LIMIT ? OFFSET ?");
+        parameters.add(limit);
+        parameters.add(offset);
 
         List<ActivityLog> logs = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();

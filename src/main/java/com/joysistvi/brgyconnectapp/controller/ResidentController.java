@@ -29,6 +29,11 @@ public class ResidentController {
     public List<Resident> getAllResidents(int actingUserId) {
         return service.getAllResidents(actingUserId);
     }
+
+    public List<Resident> getResidents(int actingUserId, int offset, int limit) {
+        return service.getResidents(offset, limit, actingUserId);
+    }
+
     public Resident getById(Integer id, int actingUserId) {
         return service.getResidentById(id, actingUserId);
     }
