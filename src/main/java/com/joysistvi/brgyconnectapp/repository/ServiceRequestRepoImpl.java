@@ -32,16 +32,17 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
     }
 
     @Override
-    public List<ServiceRequest> getRecent(int maximumRows) throws SQLException {
+    public List<ServiceRequest> getRecent(int offset, int limit) throws SQLException {
         String sql = "SELECT " + REQUEST_COLUMNS + """
                 FROM service_requests sr
                 ORDER BY sr.created_at DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """;
         List<ServiceRequest> requests = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setInt(1, maximumRows);
+            statement.setInt(1, limit);
+            statement.setInt(2, offset);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     requests.add(mapRequest(resultSet));
@@ -52,18 +53,19 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
     }
 
     @Override
-    public List<ServiceRequest> getOwn(int residentId, int maximumRows) throws SQLException {
+    public List<ServiceRequest> getOwn(int residentId, int offset, int limit) throws SQLException {
         String sql = "SELECT " + REQUEST_COLUMNS + """
                 FROM service_requests sr
                 WHERE sr.resident_id = ?
                 ORDER BY sr.created_at DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """;
         List<ServiceRequest> requests = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
              PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setInt(1, residentId);
-            statement.setInt(2, maximumRows);
+            statement.setInt(2, limit);
+            statement.setInt(3, offset);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     requests.add(mapRequest(resultSet));
@@ -74,7 +76,7 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
     }
 
     @Override
-    public List<ServiceRequest> search(String keyword, int maximumRows) throws SQLException {
+    public List<ServiceRequest> search(String keyword, int offset, int limit) throws SQLException {
         String sql = "SELECT " + REQUEST_COLUMNS + """
                 FROM service_requests sr
                 JOIN residents r ON r.resident_id = sr.resident_id
@@ -83,7 +85,7 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
                    OR r.first_name LIKE ?
                    OR r.last_name LIKE ?
                 ORDER BY sr.created_at DESC
-                LIMIT ?
+                LIMIT ? OFFSET ?
                 """;
         List<ServiceRequest> requests = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
@@ -93,7 +95,8 @@ public class ServiceRequestRepoImpl implements ServiceRequestRepo {
             statement.setString(2, pattern);
             statement.setString(3, pattern);
             statement.setString(4, pattern);
-            statement.setInt(5, maximumRows);
+            statement.setInt(5, limit);
+            statement.setInt(6, offset);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     requests.add(mapRequest(resultSet));

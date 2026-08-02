@@ -36,8 +36,7 @@ public class ActivityLogView {
             choice = scanner.nextLine().trim();
 
             switch (choice) {
-                case "1" -> printLogs(activityLogController.search(
-                        userId(actingAdmin), null, null, null, null, null));
+                case "1" -> viewPaginatedLogs(actingAdmin, null, null, null, null, null);
                 case "2" -> filterLogs(actingAdmin);
                 case "3" -> viewDetails(actingAdmin);
                 case "0" -> { }
@@ -63,32 +62,64 @@ public class ActivityLogView {
             ConsoleUI.printError("Start date cannot be after end date.");
             return;
         }
-        printLogs(activityLogController.search(
-                userId(actingAdmin), userId, action, entityType, dateFrom, dateTo));
+        viewPaginatedLogs(actingAdmin, userId, action, entityType, dateFrom, dateTo);
     }
 
-    private void printLogs(List<ActivityLog> logs) {
-        ConsoleUI.clearScreen();
-        ConsoleUI.printHeader("Activity Log Results");
-        if (logs == null || logs.isEmpty()) {
-            ConsoleUI.printInfo("No activity log entries found.");
-            return;
-        }
+    private void viewPaginatedLogs(User actingAdmin, Integer userId, String action, String entityType, LocalDate dateFrom, LocalDate dateTo) {
+        int page = 1;
+        int pageSize = 10;
+        
+        while (true) {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("Activity Log Results - Page " + page);
+            List<ActivityLog> logs = activityLogController.search(userId(actingAdmin), userId, action, entityType, dateFrom, dateTo, (page - 1) * pageSize, pageSize);
+            
+            if (logs.isEmpty() && page == 1) {
+                ConsoleUI.printInfo("No activity log entries found.");
+                break;
+            }
 
-        TableFormatter formatter = new TableFormatter("ID", "Date", "Actor", "Action", "Entity", "Entity ID", "Description");
-        for (ActivityLog log : logs) {
-            formatter.addRow(
-                    String.valueOf(log.getActivityLogId()),
-                    log.getCreatedAt() == null ? "-" : log.getCreatedAt().format(DATE_TIME_FORMAT),
-                    abbreviate(actorLabel(log), 18),
-                    abbreviate(log.getAction(), 18),
-                    abbreviate(log.getEntityType(), 17),
-                    log.getEntityId() == null ? "-" : String.valueOf(log.getEntityId()),
-                    abbreviate(log.getDescription(), 42));
+            if (!logs.isEmpty()) {
+                TableFormatter formatter = new TableFormatter("ID", "Date", "Actor", "Action", "Entity", "Entity ID", "Description");
+                for (ActivityLog log : logs) {
+                    formatter.addRow(
+                            String.valueOf(log.getActivityLogId()),
+                            log.getCreatedAt() == null ? "-" : log.getCreatedAt().format(DATE_TIME_FORMAT),
+                            abbreviate(actorLabel(log), 18),
+                            abbreviate(log.getAction(), 18),
+                            abbreviate(log.getEntityType(), 17),
+                            log.getEntityId() == null ? "-" : String.valueOf(log.getEntityId()),
+                            abbreviate(log.getDescription(), 42));
+                }
+                formatter.print();
+            }
+            
+            System.out.println();
+            ConsoleUI.printInfo("N - Next Page | P - Previous Page | Q - Quit to Menu");
+            ConsoleUI.printPrompt("Choose an option: ");
+            String opt = scanner.nextLine().trim().toUpperCase();
+            
+            if (opt.equals("N")) {
+                if (logs.size() == pageSize) {
+                    page++;
+                } else {
+                    ConsoleUI.printInfo("You are already on the last page.");
+                    pause();
+                }
+            } else if (opt.equals("P")) {
+                if (page > 1) {
+                    page--;
+                } else {
+                    ConsoleUI.printInfo("You are already on the first page.");
+                    pause();
+                }
+            } else if (opt.equals("Q") || opt.equals("0")) {
+                break;
+            } else {
+                ConsoleUI.printError("Invalid option.");
+                pause();
+            }
         }
-        formatter.print();
-        System.out.println();
-        ConsoleUI.printInfo(logs.size() + " record(s) found; newest entries are shown first.");
     }
 
     private void viewDetails(User actingAdmin) {

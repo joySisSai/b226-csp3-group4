@@ -80,40 +80,77 @@ public class ResidentServiceRequestView {
         int residentId = user.getResidentId();
         int actingUserId = user.getUserId();
 
-        List<ServiceRequest> requests = requestController.getOwnRequests(residentId, actingUserId);
-        if (requests.isEmpty()) {
-            ConsoleUI.printInfo("You have no service requests.");
-            return;
-        }
+        int page = 1;
+        int pageSize = 10;
+        
+        while (true) {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("My Service Requests - Page " + page);
 
-        TableFormatter formatter = new TableFormatter("ID", "Request Number", "Date", "Status");
-        for (ServiceRequest req : requests) {
-            formatter.addRow(
-                    String.valueOf(req.getRequestId()),
-                    req.getRequestNumber(),
-                    String.valueOf(req.getRequestDate()),
-                    String.valueOf(req.getStatus()));
-        }
-        formatter.print();
+            List<ServiceRequest> requests = requestController.getOwnRequests(residentId, (page - 1) * pageSize, pageSize, actingUserId);
+            
+            if (requests.isEmpty() && page == 1) {
+                ConsoleUI.printInfo("You have no service requests.");
+                pause();
+                return;
+            }
 
-        ConsoleUI.printPrompt("\nEnter Request ID to view details and history (or 0 to go back): ");
-        long requestId;
-        try {
-            requestId = Long.parseLong(scanner.nextLine().trim());
-        } catch (NumberFormatException e) {
-            ConsoleUI.printError("Invalid input");
-            return;
-        }
+            if (!requests.isEmpty()) {
+                TableFormatter formatter = new TableFormatter("ID", "Request Number", "Date", "Status");
+                for (ServiceRequest req : requests) {
+                    formatter.addRow(
+                            String.valueOf(req.getRequestId()),
+                            req.getRequestNumber(),
+                            String.valueOf(req.getRequestDate()),
+                            String.valueOf(req.getStatus()));
+                }
+                formatter.print();
+            }
 
-        if (requestId <= 0) {
-            return;
-        }
+            System.out.println();
+            ConsoleUI.printInfo("N - Next Page | P - Previous Page | Q - Go Back | Or enter Request ID to view details");
+            ConsoleUI.printPrompt("Choose an option: ");
+            String input = scanner.nextLine().trim();
 
-        ServiceRequest request = requestController.getOwnRequestById(requestId, residentId, actingUserId);
-        if (request == null) {
-            ConsoleUI.printError("Request not found");
-            return;
-        }
+            if (input.equalsIgnoreCase("N")) {
+                if (requests.size() == pageSize) {
+                    page++;
+                } else {
+                    ConsoleUI.printInfo("You are already on the last page.");
+                    pause();
+                }
+                continue;
+            } else if (input.equalsIgnoreCase("P")) {
+                if (page > 1) {
+                    page--;
+                } else {
+                    ConsoleUI.printInfo("You are already on the first page.");
+                    pause();
+                }
+                continue;
+            } else if (input.equalsIgnoreCase("Q") || input.equals("0")) {
+                break;
+            }
+
+            long requestId;
+            try {
+                requestId = Long.parseLong(input);
+            } catch (NumberFormatException e) {
+                ConsoleUI.printError("Invalid input");
+                pause();
+                continue;
+            }
+
+            if (requestId <= 0) {
+                continue;
+            }
+
+            ServiceRequest request = requestController.getOwnRequestById(requestId, residentId, actingUserId);
+            if (request == null) {
+                ConsoleUI.printError("Request not found");
+                pause();
+                continue;
+            }
 
         ConsoleUI.clearScreen();
         ConsoleUI.printHeader("Request Details");
@@ -139,18 +176,26 @@ public class ResidentServiceRequestView {
             historyFormatter.print();
         }
         
-        if (request.getStatus() == com.joysistvi.brgyconnectapp.model.RequestStatus.PENDING) {
-            System.out.println();
-            ConsoleUI.printPrompt("Would you like to cancel this pending request? (Y/N): ");
-            String confirm = scanner.nextLine().trim();
-            if (confirm.equalsIgnoreCase("Y") || confirm.equalsIgnoreCase("YES")) {
-                String result = requestController.cancelOwnRequest(requestId, residentId, actingUserId);
-                if (result.endsWith("successfully")) {
-                    ConsoleUI.printSuccess(result);
-                } else {
-                    ConsoleUI.printError(result);
+            if (request.getStatus() == com.joysistvi.brgyconnectapp.model.RequestStatus.PENDING) {
+                System.out.println();
+                ConsoleUI.printPrompt("Would you like to cancel this pending request? (Y/N): ");
+                String confirm = scanner.nextLine().trim();
+                if (confirm.equalsIgnoreCase("Y") || confirm.equalsIgnoreCase("YES")) {
+                    String result = requestController.cancelOwnRequest(requestId, residentId, actingUserId);
+                    if (result.endsWith("successfully")) {
+                        ConsoleUI.printSuccess(result);
+                    } else {
+                        ConsoleUI.printError(result);
+                    }
                 }
             }
+            pause();
         }
+    }
+
+    private void pause() {
+        System.out.println();
+        ConsoleUI.printPrompt("Press Enter to continue...");
+        scanner.nextLine();
     }
 }

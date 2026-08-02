@@ -17,5 +17,6 @@ public interface ActivityLogRepo {
                              String entityType,
                              LocalDate dateFrom,
                              LocalDate dateTo,
-                             int maximumRows) throws SQLException;
+                             int offset,
+                             int limit) throws SQLException;
 }

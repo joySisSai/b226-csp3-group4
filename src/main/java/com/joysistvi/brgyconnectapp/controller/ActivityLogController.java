@@ -18,8 +18,10 @@ public class ActivityLogController {
                                     String action,
                                     String entityType,
                                     LocalDate dateFrom,
-                                    LocalDate dateTo) {
-        return activityLogService.search(actingAdminId, userId, action, entityType, dateFrom, dateTo);
+                                    LocalDate dateTo,
+                                    int offset,
+                                    int limit) {
+        return activityLogService.search(actingAdminId, userId, action, entityType, dateFrom, dateTo, offset, limit);
     }
 
     public ActivityLog getById(long activityLogId, int actingAdminId) {

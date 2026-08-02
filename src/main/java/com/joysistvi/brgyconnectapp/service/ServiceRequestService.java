@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class ServiceRequestService {
-    private static final int MAXIMUM_RESULTS = 100;
+
     private static final String DATABASE_ERROR =
             "Unable to complete the operation because the database is unavailable";
 
@@ -36,26 +36,26 @@ public class ServiceRequestService {
         this.authorizationService = authorizationService;
     }
 
-    public List<ServiceRequest> getRecentRequests(int actingUserId) {
+    public List<ServiceRequest> getRecentRequests(int offset, int limit, int actingUserId) {
         if (!canManage(actingUserId)) {
             return List.of();
         }
         try {
-            return requestRepo.getRecent(MAXIMUM_RESULTS);
+            return requestRepo.getRecent(offset, limit);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
     }
 
-    public List<ServiceRequest> searchRequests(String keyword, int actingUserId) {
+    public List<ServiceRequest> searchRequests(String keyword, int offset, int limit, int actingUserId) {
         if (!canManage(actingUserId)) {
             return List.of();
         }
         if (keyword == null || keyword.isBlank()) {
-            return getRecentRequests(actingUserId);
+            return getRecentRequests(offset, limit, actingUserId);
         }
         try {
-            return requestRepo.search(keyword.trim(), MAXIMUM_RESULTS);
+            return requestRepo.search(keyword.trim(), offset, limit);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }
@@ -202,12 +202,12 @@ public class ServiceRequestService {
         };
     }
 
-    public List<ServiceRequest> getOwnRequests(int residentId, int actingUserId) {
+    public List<ServiceRequest> getOwnRequests(int residentId, int offset, int limit, int actingUserId) {
         if (!authorizationService.canViewOwnResidentProfile(actingUserId, residentId)) {
             return List.of();
         }
         try {
-            return requestRepo.getOwn(residentId, MAXIMUM_RESULTS);
+            return requestRepo.getOwn(residentId, offset, limit);
         } catch (SQLException exception) {
             throw new DataAccessException(exception);
         }

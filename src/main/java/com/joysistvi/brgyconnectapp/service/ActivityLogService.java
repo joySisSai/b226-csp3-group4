@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Locale;
 
 public class ActivityLogService {
-    private static final int MAXIMUM_RESULTS = 100;
+
     private final ActivityLogRepo activityLogRepo;
     private final AuthorizationService authorizationService;
 
@@ -51,7 +51,9 @@ public class ActivityLogService {
                                     String action,
                                     String entityType,
                                     LocalDate dateFrom,
-                                    LocalDate dateTo) {
+                                    LocalDate dateTo,
+                                    int offset,
+                                    int limit) {
         if (!canView(actingAdminId) || userId != null && userId <= 0) {
             return List.of();
         }
@@ -65,7 +67,8 @@ public class ActivityLogService {
                     normalizeOptionalCategory(entityType),
                     dateFrom,
                     dateTo,
-                    MAXIMUM_RESULTS
+                    offset,
+                    limit
             );
         } catch (SQLException exception) {
             throw new DataAccessException(exception);

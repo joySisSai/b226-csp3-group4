@@ -9,11 +9,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ServiceRequestRepo {
-    List<ServiceRequest> getRecent(int maximumRows) throws SQLException;
+    List<ServiceRequest> getRecent(int offset, int limit) throws SQLException;
 
-    List<ServiceRequest> getOwn(int residentId, int maximumRows) throws SQLException;
+    List<ServiceRequest> getOwn(int residentId, int offset, int limit) throws SQLException;
 
-    List<ServiceRequest> search(String keyword, int maximumRows) throws SQLException;
+    List<ServiceRequest> search(String keyword, int offset, int limit) throws SQLException;
 
     Optional<ServiceRequest> getById(long requestId) throws SQLException;
 

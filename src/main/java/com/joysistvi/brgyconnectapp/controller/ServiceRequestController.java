@@ -24,8 +24,8 @@ public class ServiceRequestController {
         this.activityLogService = activityLogService;
     }
 
-    public List<ServiceRequest> search(String keyword, int actingUserId) {
-        return requestService.searchRequests(keyword, actingUserId);
+    public List<ServiceRequest> search(String keyword, int offset, int limit, int actingUserId) {
+        return requestService.searchRequests(keyword, offset, limit, actingUserId);
     }
 
     public ServiceRequest getById(long requestId, int actingUserId) {
@@ -54,8 +54,8 @@ public class ServiceRequestController {
         return result;
     }
 
-    public List<ServiceRequest> getOwnRequests(int residentId, int actingUserId) {
-        return requestService.getOwnRequests(residentId, actingUserId);
+    public List<ServiceRequest> getOwnRequests(int residentId, int offset, int limit, int actingUserId) {
+        return requestService.getOwnRequests(residentId, offset, limit, actingUserId);
     }
 
     public ServiceRequest getOwnRequestById(long requestId, int residentId, int actingUserId) {
