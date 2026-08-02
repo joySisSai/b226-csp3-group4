@@ -61,9 +61,46 @@ public class ResidentManagementView {
     }
 
     private void listResidents(User actingUser) {
-        ConsoleUI.clearScreen();
-        ConsoleUI.printHeader("Resident Records");
-        printResidents(residentController.getAllResidents(userId(actingUser)));
+        int page = 1;
+        int pageSize = 10;
+        
+        while (true) {
+            ConsoleUI.clearScreen();
+            ConsoleUI.printHeader("Resident Records - Page " + page);
+            List<Resident> residents = residentController.getResidents(userId(actingUser), (page - 1) * pageSize, pageSize);
+            printResidents(residents);
+            
+            if (residents.isEmpty() && page == 1) {
+                pause();
+                break;
+            }
+            
+            System.out.println();
+            ConsoleUI.printInfo("N - Next Page | P - Previous Page | Q - Quit to Menu");
+            ConsoleUI.printPrompt("Choose an option: ");
+            String opt = scanner.nextLine().trim().toUpperCase();
+            
+            if (opt.equals("N")) {
+                if (residents.size() == pageSize) {
+                    page++;
+                } else {
+                    ConsoleUI.printInfo("You are already on the last page.");
+                    pause();
+                }
+            } else if (opt.equals("P")) {
+                if (page > 1) {
+                    page--;
+                } else {
+                    ConsoleUI.printInfo("You are already on the first page.");
+                    pause();
+                }
+            } else if (opt.equals("Q") || opt.equals("0")) {
+                break;
+            } else {
+                ConsoleUI.printError("Invalid option.");
+                pause();
+            }
+        }
     }
 
     private void searchResidents(User actingUser) {

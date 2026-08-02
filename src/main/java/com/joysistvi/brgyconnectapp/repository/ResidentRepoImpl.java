@@ -35,6 +35,21 @@ public class ResidentRepoImpl implements ResidentRepo {
     }
 
     @Override
+    public List<Resident> getResidents(int offset, int limit) throws SQLException {
+        List<Resident> list = new ArrayList<>();
+        String sql = "SELECT * FROM residents ORDER BY resident_id LIMIT ? OFFSET ?";
+        try (Connection conn = dbFactory.openConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, limit);
+            stmt.setInt(2, offset);
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) list.add(mapToResident(rs));
+            }
+        }
+        return list;
+    }
+
+    @Override
     public List<Resident> getAllActive() throws SQLException {
         List<Resident> residents = new ArrayList<>();
         String sql = """

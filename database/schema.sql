@@ -68,7 +68,7 @@ CREATE TABLE residents (
         CHECK (resident_code REGEXP '^RES-[0-9]{4}-[0-9]{6,}$'),
     CONSTRAINT fk_residents_household
         FOREIGN KEY (household_id) REFERENCES households (household_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_residents_name (last_name, first_name),
     INDEX idx_residents_household (household_id),
     INDEX idx_residents_status (residency_status),
@@ -145,7 +145,7 @@ CREATE TABLE service_requests (
         ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_requests_processed_by
         FOREIGN KEY (processed_by_user_id) REFERENCES users (user_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_requests_resident (resident_id),
     INDEX idx_requests_service_type (service_type_id),
     INDEX idx_requests_status_date (status, request_date),
@@ -164,7 +164,7 @@ CREATE TABLE request_status_history (
     CONSTRAINT pk_request_status_history PRIMARY KEY (history_id),
     CONSTRAINT fk_history_request
         FOREIGN KEY (request_id) REFERENCES service_requests (request_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT fk_history_changed_by
         FOREIGN KEY (changed_by_user_id) REFERENCES users (user_id)
         ON DELETE RESTRICT ON UPDATE CASCADE,
@@ -183,7 +183,7 @@ CREATE TABLE activity_logs (
     CONSTRAINT pk_activity_logs PRIMARY KEY (activity_log_id),
     CONSTRAINT fk_activity_logs_user
         FOREIGN KEY (user_id) REFERENCES users (user_id)
-        ON DELETE SET NULL ON UPDATE CASCADE,
+        ON DELETE RESTRICT ON UPDATE CASCADE,
     INDEX idx_activity_user_date (user_id, created_at),
     INDEX idx_activity_entity (entity_type, entity_id),
     INDEX idx_activity_action_date (action, created_at)

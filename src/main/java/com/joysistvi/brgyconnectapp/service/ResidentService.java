@@ -34,6 +34,17 @@ public class ResidentService {
         }
     }
 
+    public List<Resident> getResidents(int offset, int limit, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
+        try {
+            return repo.getResidents(offset, limit);
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
     public Resident getResidentById(int id, int actingUserId) {
         if (!canManage(actingUserId)) {
             return null;

@@ -11,6 +11,7 @@ import java.util.Optional;
  */
 public interface ResidentRepo {
         List<Resident> getAll() throws SQLException;
+        List<Resident> getResidents(int offset, int limit) throws SQLException;
         List<Resident> getAllActive() throws SQLException;
         Optional<Resident> getById(int id) throws SQLException;
         Optional<Resident> getByCode(String code) throws SQLException;
