@@ -50,7 +50,7 @@ public final class ResidentFieldValidator {
             return "Birth date is required";
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(BARANGAY_TIME_ZONE);
         if (birthDate.isAfter(today)) {
             return "Birth date cannot be in the future";
         }
