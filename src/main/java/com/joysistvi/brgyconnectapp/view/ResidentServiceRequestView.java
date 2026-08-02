@@ -138,5 +138,19 @@ public class ResidentServiceRequestView {
                         h.getRemarks() == null ? "" : h.getRemarks());
             }
         }
+        
+        if (request.getStatus() == com.joysistvi.brgyconnectapp.model.RequestStatus.PENDING) {
+            System.out.println();
+            ConsoleUI.printPrompt("Would you like to cancel this pending request? (Y/N): ");
+            String confirm = scanner.nextLine().trim();
+            if (confirm.equalsIgnoreCase("Y") || confirm.equalsIgnoreCase("YES")) {
+                String result = requestController.cancelOwnRequest(requestId, residentId, actingUserId);
+                if (result.endsWith("successfully")) {
+                    ConsoleUI.printSuccess(result);
+                } else {
+                    ConsoleUI.printError(result);
+                }
+            }
+        }
     }
 }
