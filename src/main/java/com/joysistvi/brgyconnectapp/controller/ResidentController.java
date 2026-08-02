@@ -1,6 +1,7 @@
 package com.joysistvi.brgyconnectapp.controller;
 
 import com.joysistvi.brgyconnectapp.model.Resident;
+import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.service.ActivityLogService;
 import com.joysistvi.brgyconnectapp.service.ResidentService;
 
@@ -66,5 +67,31 @@ public class ResidentController {
             activityLogService.record(actingUserId, action, "RESIDENT",
                     residentId == null ? null : residentId.longValue(), description);
         }
+    }
+
+    public List<User> getPendingAccounts(int actingUserId) {
+        return service.getPendingAccounts(actingUserId);
+    }
+
+    public String approveResidentAccount(int targetUserId, int actingUserId) {
+        String message = service.approveResidentAccount(targetUserId, actingUserId);
+        if (message.toLowerCase().contains("success")) {
+            if (activityLogService != null) {
+                activityLogService.record(actingUserId, "APPROVE_ACCOUNT", "USER", (long) targetUserId,
+                        "Approved resident account ID " + targetUserId);
+            }
+        }
+        return message;
+    }
+
+    public String rejectResidentAccount(int targetUserId, int actingUserId) {
+        String message = service.rejectResidentAccount(targetUserId, actingUserId);
+        if (message.toLowerCase().contains("success") || message.toLowerCase().contains("rejected")) {
+            if (activityLogService != null) {
+                activityLogService.record(actingUserId, "REJECT_ACCOUNT", "USER", (long) targetUserId,
+                        "Rejected resident account ID " + targetUserId);
+            }
+        }
+        return message;
     }
 }

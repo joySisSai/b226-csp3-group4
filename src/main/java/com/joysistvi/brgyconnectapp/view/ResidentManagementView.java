@@ -34,8 +34,9 @@ public class ResidentManagementView {
             ConsoleUI.printMenuOption("2", "Search residents");
             ConsoleUI.printMenuOption("3", "View resident details");
             ConsoleUI.printMenuOption("4", "Register resident");
-            ConsoleUI.printMenuOption("5", "Update resident");
-            ConsoleUI.printMenuOption("6", "Deactivate resident");
+            ConsoleUI.printMenuOption("5", "Review pending accounts");
+            ConsoleUI.printMenuOption("6", "Update resident");
+            ConsoleUI.printMenuOption("7", "Deactivate resident");
             ConsoleUI.printMenuOption("0", "Back");
             System.out.println();
             ConsoleUI.printPrompt("Choose an option: ");
@@ -46,8 +47,9 @@ public class ResidentManagementView {
                 case "2" -> searchResidents(actingUser);
                 case "3" -> viewResident(actingUser);
                 case "4" -> registerResident(actingUser);
-                case "5" -> updateResident(actingUser);
-                case "6" -> deactivateResident(actingUser);
+                case "5" -> reviewPendingAccounts(actingUser);
+                case "6" -> updateResident(actingUser);
+                case "7" -> deactivateResident(actingUser);
                 case "0" -> { }
                 default -> ConsoleUI.printError("Please choose a valid menu option.");
             }
@@ -226,6 +228,51 @@ public class ResidentManagementView {
 
     private int userId(User user) {
         return user == null || user.getUserId() == null ? 0 : user.getUserId();
+    }
+
+    private void reviewPendingAccounts(User actingUser) {
+        ConsoleUI.clearScreen();
+        ConsoleUI.printHeader("Pending Resident Accounts");
+
+        List<User> pending = residentController.getPendingAccounts(userId(actingUser));
+        if (pending == null || pending.isEmpty()) {
+            ConsoleUI.printInfo("No pending resident accounts found.");
+            return;
+        }
+
+        TableFormatter formatter = new TableFormatter("ID", "Username", "Display Name", "Resident ID", "Date Registered");
+        for (User u : pending) {
+            formatter.addRow(
+                    String.valueOf(u.getUserId()),
+                    u.getUsername(),
+                    u.getDisplayName(),
+                    u.getResidentId() == null ? "-" : String.valueOf(u.getResidentId()),
+                    u.getCreatedAt() == null ? "-" : u.getCreatedAt().toString()
+            );
+        }
+        formatter.print();
+        System.out.println();
+
+        ConsoleUI.printInfo("1. Approve Account");
+        ConsoleUI.printInfo("2. Reject Account");
+        ConsoleUI.printInfo("0. Back");
+        System.out.println();
+        ConsoleUI.printPrompt("Choose an option: ");
+        String action = scanner.nextLine().trim();
+
+        if ("0".equals(action)) return;
+
+        int targetUserId = promptPositiveInteger("User ID to process: ", false);
+        
+        if ("1".equals(action)) {
+            String result = residentController.approveResidentAccount(targetUserId, userId(actingUser));
+            printOperationResult(result);
+        } else if ("2".equals(action)) {
+            String result = residentController.rejectResidentAccount(targetUserId, userId(actingUser));
+            printOperationResult(result);
+        } else {
+            ConsoleUI.printError("Invalid option.");
+        }
     }
 
     private void printResidents(List<Resident> residents) {

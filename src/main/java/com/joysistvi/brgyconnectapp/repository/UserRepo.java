@@ -12,6 +12,7 @@ public interface UserRepo {
     List<User> getAll() throws SQLException;
 
     List<User> search(String keyword, int maximumRows) throws SQLException;
+    List<User> getPendingAccounts() throws SQLException;
 
     Optional<User> findById(int userId) throws SQLException;
 

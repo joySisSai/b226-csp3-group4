@@ -90,6 +90,20 @@ public class UserRepoImpl implements UserRepo {
     }
 
     @Override
+    public List<User> getPendingAccounts() throws SQLException {
+        List<User> users = new ArrayList<>();
+        String sql = "SELECT * FROM users WHERE account_status = 'PENDING_ACTIVATION' ORDER BY created_at ASC";
+        try (Connection connection = connectionFactory.openConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+            while (resultSet.next()) {
+                users.add(mapUser(resultSet));
+            }
+        }
+        return users;
+    }
+
+    @Override
     public Optional<User> findById(int userId) throws SQLException {
         String sql = "SELECT " + USER_COLUMNS + " FROM users WHERE user_id = ?";
         try (Connection connection = connectionFactory.openConnection();

@@ -6,6 +6,7 @@ import com.joysistvi.brgyconnectapp.config.DbConnection;
 import com.joysistvi.brgyconnectapp.controller.AuthController;
 import com.joysistvi.brgyconnectapp.controller.ActivityLogController;
 import com.joysistvi.brgyconnectapp.controller.HouseholdController;
+import com.joysistvi.brgyconnectapp.controller.RegistrationController;
 import com.joysistvi.brgyconnectapp.controller.ResidentController;
 import com.joysistvi.brgyconnectapp.controller.ReportController;
 import com.joysistvi.brgyconnectapp.controller.ServiceRequestController;
@@ -31,6 +32,7 @@ import com.joysistvi.brgyconnectapp.service.ActivityLogService;
 import com.joysistvi.brgyconnectapp.service.AuthorizationService;
 import com.joysistvi.brgyconnectapp.service.HouseholdService;
 import com.joysistvi.brgyconnectapp.service.ReportService;
+import com.joysistvi.brgyconnectapp.service.RegistrationService;
 import com.joysistvi.brgyconnectapp.service.ResidentService;
 import com.joysistvi.brgyconnectapp.service.ServiceRequestService;
 import com.joysistvi.brgyconnectapp.service.ServiceTypeAdminService;
@@ -69,13 +71,17 @@ public class BarangayConnectApplication {
         ActivityLogService activityLogService = new ActivityLogService(
                 activityLogRepo, authorizationService);
         AuthService authService = new AuthService(userRepo);
+        ResidentRepo residentRepo = new ResidentRepoImpl(connectionFactory);
+        RegistrationService registrationService = new RegistrationService(userRepo, residentRepo);
         AuthController authController = new AuthController(authService);
+        RegistrationController registrationController = new RegistrationController(registrationService);
 
         Scanner scanner = new Scanner(System.in);
-        LoginView loginView = new LoginView(authController, scanner);
-        ResidentRepo residentRepo = new ResidentRepoImpl(connectionFactory);
+        RegistrationView registrationView = new RegistrationView(registrationController, scanner);
+        LoginView loginView = new LoginView(authController, registrationView, scanner);
+
         ResidentController residentController = new ResidentController(
-                new ResidentService(residentRepo, authorizationService), activityLogService);
+                new ResidentService(residentRepo, userRepo, authorizationService), activityLogService);
         HouseholdRepo householdRepo = new HouseholdRepoImpl(connectionFactory);
         HouseholdService householdService = new HouseholdService(
                 householdRepo, residentRepo, authorizationService);

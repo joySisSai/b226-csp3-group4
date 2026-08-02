@@ -1,7 +1,10 @@
 package com.joysistvi.brgyconnectapp.service;
 
+import com.joysistvi.brgyconnectapp.model.AccountStatus;
 import com.joysistvi.brgyconnectapp.model.Resident;
+import com.joysistvi.brgyconnectapp.model.User;
 import com.joysistvi.brgyconnectapp.repository.ResidentRepo;
+import com.joysistvi.brgyconnectapp.repository.UserRepo;
 import com.joysistvi.brgyconnectapp.validation.ResidentFieldValidator;
 
 import java.sql.SQLException;
@@ -11,10 +14,12 @@ public class ResidentService {
     private static final String DATABASE_ERROR =
             "Unable to complete the operation because the database is unavailable";
     private final ResidentRepo repo;
+    private final UserRepo userRepo;
     private final AuthorizationService authorizationService;
 
-    public ResidentService(ResidentRepo repo, AuthorizationService authorizationService) {
+    public ResidentService(ResidentRepo repo, UserRepo userRepo, AuthorizationService authorizationService) {
         this.repo = repo;
+        this.userRepo = userRepo;
         this.authorizationService = authorizationService;
     }
 
@@ -132,6 +137,55 @@ public class ResidentService {
             return repo.deactivate(id)
                     ? "Resident marked as inactive"
                     : "Failed to update status";
+        } catch (SQLException exception) {
+            return DATABASE_ERROR;
+        }
+    }
+
+    public List<User> getPendingAccounts(int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return List.of();
+        }
+        try {
+            return userRepo.getPendingAccounts();
+        } catch (SQLException exception) {
+            throw new DataAccessException(exception);
+        }
+    }
+
+    public String approveResidentAccount(int targetUserId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
+        if (targetUserId <= 0) return "Invalid user ID";
+        try {
+            User target = userRepo.findById(targetUserId).orElse(null);
+            if (target == null) return "User account not found";
+            if (target.getAccountStatus() != AccountStatus.PENDING_ACTIVATION) {
+                return "This account is not pending activation";
+            }
+            return userRepo.updateStatus(targetUserId, AccountStatus.ACTIVE)
+                    ? "Resident account approved successfully"
+                    : "Failed to approve resident account";
+        } catch (SQLException exception) {
+            return DATABASE_ERROR;
+        }
+    }
+
+    public String rejectResidentAccount(int targetUserId, int actingUserId) {
+        if (!canManage(actingUserId)) {
+            return AuthorizationService.STAFF_ACCESS_DENIED;
+        }
+        if (targetUserId <= 0) return "Invalid user ID";
+        try {
+            User target = userRepo.findById(targetUserId).orElse(null);
+            if (target == null) return "User account not found";
+            if (target.getAccountStatus() != AccountStatus.PENDING_ACTIVATION) {
+                return "This account is not pending activation";
+            }
+            return userRepo.updateStatus(targetUserId, AccountStatus.INACTIVE)
+                    ? "Resident account rejected"
+                    : "Failed to reject resident account";
         } catch (SQLException exception) {
             return DATABASE_ERROR;
         }
