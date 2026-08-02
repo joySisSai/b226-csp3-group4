@@ -27,7 +27,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
 
     @Override
     public List<ServiceType> getAll() throws SQLException {
-        String sql = "SELECT " + COLUMNS + " FROM service_types ORDER BY service_name";
+        String sql = "SELECT " + COLUMNS + " FROM service_types ORDER BY service_type_id";
         return queryList(sql);
     }
 
@@ -36,7 +36,7 @@ public class ServiceTypeRepoImpl implements ServiceTypeRepo {
         String sql = "SELECT " + COLUMNS + """
                 FROM service_types
                 WHERE is_active = TRUE
-                ORDER BY service_name
+                ORDER BY service_type_id
                 """;
         List<ServiceType> serviceTypes = new ArrayList<>();
         try (Connection connection = connectionFactory.openConnection();
