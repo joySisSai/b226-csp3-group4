@@ -105,8 +105,8 @@ public class RegistrationView {
                 resident.setLastName(promptRequired("Last Name: "));
                 resident.setSuffix(promptOptional("Suffix (e.g., Jr, III): "));
                 resident.setBirthDate(promptDate("Birth Date (YYYY-MM-DD): "));
-                resident.setSex(promptEnum("Sex (MALE/FEMALE): ", Sex.class));
-                resident.setCivilStatus(promptEnum("Civil Status (SINGLE/MARRIED/WIDOWED/LEGALLY_SEPARATED): ", CivilStatus.class));
+                resident.setSex(promptEnum("Sex", Sex.values(), false, null));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
                 resident.setContactNumber(promptOptional("Contact Number: "));
                 resident.setEmail(promptOptional("Email Address: "));
                 resident.setOccupation(promptOptional("Occupation: "));
@@ -126,8 +126,8 @@ public class RegistrationView {
                 resident.setLastName(promptTextUpdate("Last Name", resident.getLastName()));
                 resident.setSuffix(promptTextUpdate("Suffix", resident.getSuffix()));
                 resident.setBirthDate(promptDateUpdate("Birth Date (YYYY-MM-DD)", resident.getBirthDate()));
-                resident.setSex(promptEnumUpdate("Sex (MALE/FEMALE)", resident.getSex(), Sex.class));
-                resident.setCivilStatus(promptEnumUpdate("Civil Status", resident.getCivilStatus(), CivilStatus.class));
+                resident.setSex(promptEnum("Sex", Sex.values(), true, resident.getSex()));
+                resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), true, resident.getCivilStatus()));
                 resident.setContactNumber(promptTextUpdate("Contact Number", resident.getContactNumber()));
                 resident.setEmail(promptTextUpdate("Email Address", resident.getEmail()));
                 resident.setOccupation(promptTextUpdate("Occupation", resident.getOccupation()));
@@ -189,16 +189,36 @@ public class RegistrationView {
         }
     }
 
-    private <T extends Enum<T>> T promptEnum(String label, Class<T> enumClass) {
+    private <E extends Enum<E>> E promptEnum(String label, E[] values, boolean allowBlank, E currentValue) {
         while (true) {
-            ConsoleUI.printPrompt(label);
-            String input = scanner.nextLine().trim().toUpperCase();
-            try {
-                return Enum.valueOf(enumClass, input);
-            } catch (IllegalArgumentException ignored) {
-                ConsoleUI.printError("Please enter a valid option.");
+            System.out.println();
+            ConsoleUI.printSubHeader(label);
+            for (int index = 0; index < values.length; index++) {
+                ConsoleUI.printMenuOption(String.valueOf(index + 1), formatEnum(values[index]));
             }
+            String suffix = allowBlank ? " (Enter to keep " + formatEnum(currentValue) + ")" : "";
+            ConsoleUI.printPrompt("Select " + label.toLowerCase() + suffix + ": ");
+            String input = scanner.nextLine().trim();
+            if (allowBlank && input.isEmpty()) {
+                return currentValue;
+            }
+            try {
+                int selected = Integer.parseInt(input);
+                if (selected >= 1 && selected <= values.length) {
+                    return values[selected - 1];
+                }
+            } catch (NumberFormatException ignored) {
+            }
+            ConsoleUI.printError("Choose a number from 1 to " + values.length + ".");
         }
+    }
+
+    private String formatEnum(Enum<?> value) {
+        if (value == null) {
+            return "-";
+        }
+        String name = value.name().toLowerCase().replace('_', ' ');
+        return Character.toUpperCase(name.charAt(0)) + name.substring(1);
     }
 
     private Integer promptOptionalPositiveInteger(String label) {
@@ -253,18 +273,7 @@ public class RegistrationView {
         }
     }
 
-    private <T extends Enum<T>> T promptEnumUpdate(String fieldName, T currentValue, Class<T> enumClass) {
-        while (true) {
-            ConsoleUI.printPrompt(String.format("%s [%s]: ", fieldName, currentValue));
-            String input = scanner.nextLine().trim().toUpperCase();
-            if (input.isEmpty()) return currentValue;
-            try {
-                return Enum.valueOf(enumClass, input);
-            } catch (IllegalArgumentException ignored) {
-                ConsoleUI.printError("Please enter a valid option.");
-            }
-        }
-    }
+
 
     private Integer promptIntegerUpdate(String fieldName, Integer currentValue) {
         while (true) {
