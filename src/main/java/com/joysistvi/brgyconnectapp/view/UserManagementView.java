@@ -194,18 +194,17 @@ public class UserManagementView {
             return;
         }
 
-        System.out.printf("%-6s %-18s %-28s %-12s %-20s %-10s%n",
-                "ID", "Username", "Display Name", "Role", "Status", "Resident");
-        System.out.println("-".repeat(100));
+        TableFormatter formatter = new TableFormatter("ID", "Username", "Display Name", "Role", "Status", "Resident");
         for (User user : users) {
-            System.out.printf("%-6s %-18s %-28s %-12s %-20s %-10s%n",
-                    user.getUserId(),
+            formatter.addRow(
+                    String.valueOf(user.getUserId()),
                     abbreviate(user.getUsername(), 18),
                     abbreviate(user.getDisplayName(), 28),
-                    user.getRole(),
-                    user.getAccountStatus(),
-                    user.getResidentId() == null ? "-" : user.getResidentId());
+                    String.valueOf(user.getRole()),
+                    String.valueOf(user.getAccountStatus()),
+                    user.getResidentId() == null ? "-" : String.valueOf(user.getResidentId()));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(users.size() + " account(s) found.");
     }

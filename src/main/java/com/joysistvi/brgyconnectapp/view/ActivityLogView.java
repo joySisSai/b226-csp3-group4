@@ -75,19 +75,18 @@ public class ActivityLogView {
             return;
         }
 
-        System.out.printf("%-6s %-19s %-18s %-18s %-17s %-9s %-42s%n",
-                "ID", "Date", "Actor", "Action", "Entity", "Entity ID", "Description");
-        System.out.println("-".repeat(137));
+        TableFormatter formatter = new TableFormatter("ID", "Date", "Actor", "Action", "Entity", "Entity ID", "Description");
         for (ActivityLog log : logs) {
-            System.out.printf("%-6s %-19s %-18s %-18s %-17s %-9s %-42s%n",
-                    log.getActivityLogId(),
+            formatter.addRow(
+                    String.valueOf(log.getActivityLogId()),
                     log.getCreatedAt() == null ? "-" : log.getCreatedAt().format(DATE_TIME_FORMAT),
                     abbreviate(actorLabel(log), 18),
                     abbreviate(log.getAction(), 18),
                     abbreviate(log.getEntityType(), 17),
-                    log.getEntityId() == null ? "-" : log.getEntityId(),
+                    log.getEntityId() == null ? "-" : String.valueOf(log.getEntityId()),
                     abbreviate(log.getDescription(), 42));
         }
+        formatter.print();
         System.out.println();
         ConsoleUI.printInfo(logs.size() + " record(s) found; newest entries are shown first.");
     }
