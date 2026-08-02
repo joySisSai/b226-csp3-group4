@@ -12,11 +12,13 @@ public class ResidentDashboard {
     private final Scanner scanner;
     private final ResidentController residentController;
     private final ResidentServiceRequestView requestView;
+    private final com.joysistvi.brgyconnectapp.controller.HouseholdController householdController;
 
-    public ResidentDashboard(Scanner scanner, ResidentController residentController, ServiceRequestController requestController) {
+    public ResidentDashboard(Scanner scanner, ResidentController residentController, ServiceRequestController requestController, com.joysistvi.brgyconnectapp.controller.HouseholdController householdController) {
         this.scanner = scanner;
         this.residentController = residentController;
         this.requestView = new ResidentServiceRequestView(scanner, requestController);
+        this.householdController = householdController;
     }
 
     public void show(User user) {
@@ -99,6 +101,16 @@ public class ResidentDashboard {
                 resident.getEmail() == null ? "N/A" : resident.getEmail());
         System.out.printf("Occupation      : %s%n",
                 resident.getOccupation() == null ? "N/A" : resident.getOccupation());
+                
+        String address = "N/A";
+        if (resident.getHouseholdId() != null) {
+            com.joysistvi.brgyconnectapp.model.Household h = householdController.getById(resident.getHouseholdId(), actingUserId);
+            if (h != null) {
+                address = h.getAddressLine() + ", " + h.getPurok();
+            }
+        }
+        System.out.printf("Address         : %s%n", address);
+        
         System.out.printf("Registered Voter: %s%n",
                 resident.isRegisteredVoter() ? "Yes" : "No");
         System.out.printf("Household Head  : %s%n",

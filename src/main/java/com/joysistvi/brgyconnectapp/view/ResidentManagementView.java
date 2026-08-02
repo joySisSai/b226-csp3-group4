@@ -17,10 +17,12 @@ import java.util.function.Function;
 public class ResidentManagementView {
     private final Scanner scanner;
     private final ResidentController residentController;
+    private final com.joysistvi.brgyconnectapp.controller.HouseholdController householdController;
 
-    public ResidentManagementView(Scanner scanner, ResidentController residentController) {
+    public ResidentManagementView(Scanner scanner, ResidentController residentController, com.joysistvi.brgyconnectapp.controller.HouseholdController householdController) {
         this.scanner = scanner;
         this.residentController = residentController;
+        this.householdController = householdController;
     }
 
     public void show(User actingUser) {
@@ -87,7 +89,7 @@ public class ResidentManagementView {
             return;
         }
 
-        printResidentDetails(resident);
+        printResidentDetails(resident, actingUser);
     }
 
     private void registerResident(User actingUser) {
@@ -169,7 +171,7 @@ public class ResidentManagementView {
             return;
         }
 
-        printResidentDetails(resident);
+        printResidentDetails(resident, actingUser);
         if (resident.getResidencyStatus() == ResidencyStatus.INACTIVE) {
             ConsoleUI.printInfo("This resident is already inactive.");
             return;
@@ -210,7 +212,7 @@ public class ResidentManagementView {
         ConsoleUI.printInfo(residents.size() + " record(s) found.");
     }
 
-    private void printResidentDetails(Resident resident) {
+    private void printResidentDetails(Resident resident, User actingUser) {
         System.out.printf("Resident ID      : %s%n", resident.getResidentId());
         System.out.printf("Resident Code    : %s%n", valueOrDash(resident.getResidentCode()));
         System.out.printf("Full Name        : %s%n", fullName(resident));
@@ -221,6 +223,16 @@ public class ResidentManagementView {
         System.out.printf("Email            : %s%n", valueOrDash(resident.getEmail()));
         System.out.printf("Occupation       : %s%n", valueOrDash(resident.getOccupation()));
         System.out.printf("Household ID     : %s%n", valueOrDash(resident.getHouseholdId()));
+        
+        String address = "N/A";
+        if (resident.getHouseholdId() != null) {
+            com.joysistvi.brgyconnectapp.model.Household h = householdController.getById(resident.getHouseholdId(), userId(actingUser));
+            if (h != null) {
+                address = h.getAddressLine() + ", " + h.getPurok();
+            }
+        }
+        System.out.printf("Address          : %s%n", address);
+        
         System.out.printf("Registered Voter : %s%n", yesNo(resident.isRegisteredVoter()));
         System.out.printf("Household Head   : %s%n", yesNo(resident.isHouseholdHead()));
         System.out.printf("Residency Status : %s%n", valueOrDash(resident.getResidencyStatus()));

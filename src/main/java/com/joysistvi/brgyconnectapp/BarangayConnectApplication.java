@@ -76,15 +76,17 @@ public class BarangayConnectApplication {
         ResidentRepo residentRepo = new ResidentRepoImpl(connectionFactory);
         ResidentController residentController = new ResidentController(
                 new ResidentService(residentRepo, authorizationService), activityLogService);
-        ResidentManagementView residentManagementView = new ResidentManagementView(
-                scanner, residentController);
         HouseholdRepo householdRepo = new HouseholdRepoImpl(connectionFactory);
         HouseholdService householdService = new HouseholdService(
                 householdRepo, residentRepo, authorizationService);
+        HouseholdController householdController = new HouseholdController(householdService, activityLogService);
         HouseholdManagementView householdManagementView = new HouseholdManagementView(
                 scanner,
-                new HouseholdController(householdService, activityLogService)
+                householdController
         );
+
+        ResidentManagementView residentManagementView = new ResidentManagementView(
+                scanner, residentController, householdController);
         ServiceRequestRepo serviceRequestRepo = new ServiceRequestRepoImpl(connectionFactory);
         ServiceTypeRepo serviceTypeRepo = new ServiceTypeRepoImpl(connectionFactory);
         ServiceRequestService serviceRequestService = new ServiceRequestService(
@@ -137,7 +139,7 @@ public class BarangayConnectApplication {
                         serviceRequestManagementView,
                         reportView
                 ),
-                new ResidentDashboard(scanner, residentController, serviceRequestController)
+                new ResidentDashboard(scanner, residentController, serviceRequestController, householdController)
         );
 
         while (true) {
