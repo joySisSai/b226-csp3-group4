@@ -6,13 +6,20 @@ import com.joysistvi.brgyconnectapp.model.Resident;
 import com.joysistvi.brgyconnectapp.model.ResidencyStatus;
 import com.joysistvi.brgyconnectapp.model.Sex;
 import com.joysistvi.brgyconnectapp.model.User;
+import com.joysistvi.brgyconnectapp.validation.ResidentFieldValidator;
 
 import java.io.Console;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.Scanner;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public class RegistrationView {
+    private static final int MAXIMUM_DISPLAY_NAME_LENGTH = 150;
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("[A-Za-z0-9._-]{4,50}");
     private final RegistrationController registrationController;
     private final Scanner scanner;
 
@@ -58,19 +65,18 @@ public class RegistrationView {
         while (true) {
             if (firstTry) {
                 residentCode = promptRequired("Resident Code: ");
-                user.setUsername(promptRequired("Username: "));
-                user.setDisplayName(promptRequired("Display Name (Full Name): "));
-                password = readPassword();
+                user.setUsername(promptUsername("Username: "));
+                user.setDisplayName(promptDisplayName("Display Name (Full Name): "));
+                password = readValidPassword();
             } else {
                 ConsoleUI.printInfo("Press Enter to keep the current value.");
                 residentCode = promptTextUpdate("Resident Code", residentCode);
-                user.setUsername(promptTextUpdate("Username", user.getUsername()));
-                user.setDisplayName(promptTextUpdate("Display Name", user.getDisplayName()));
-                
-                char[] newPassword = readPassword(true);
-                if (newPassword.length > 0) {
-                    password = newPassword;
-                }
+                user.setUsername(promptValidatedTextUpdate(
+                        "Username", user.getUsername(), this::validateUsername));
+                user.setDisplayName(promptValidatedTextUpdate(
+                        "Display Name", user.getDisplayName(), this::validateDisplayName));
+                ConsoleUI.printInfo("Re-enter the password to retry registration.");
+                password = readValidPassword();
             }
             
             String result = registrationController.registerWithExistingResident(residentCode, user, password);
@@ -107,18 +113,20 @@ public class RegistrationView {
                 resident.setBirthDate(promptDate("Birth Date (YYYY-MM-DD): "));
                 resident.setSex(promptEnum("Sex", Sex.values(), false, null));
                 resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), false, null));
-                resident.setContactNumber(promptOptional("Contact Number: "));
-                resident.setEmail(promptOptional("Email Address: "));
+                resident.setContactNumber(promptValidatedOptional(
+                        "Contact Number: ", ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedOptional(
+                        "Email Address: ", ResidentFieldValidator::validateEmail));
                 resident.setOccupation(promptOptional("Occupation: "));
                 resident.setHouseholdId(promptOptionalPositiveInteger("Household ID (leave blank if none): "));
                 resident.setRegisteredVoter(promptYesNo("Is a registered voter? (Y/N): "));
                 resident.setHouseholdHead(promptYesNo("Is household head? (Y/N): "));
                 
                 System.out.println("\n--- Account Details ---");
-                user.setUsername(promptRequired("Username: "));
+                user.setUsername(promptUsername("Username: "));
                 user.setDisplayName(resident.getFirstName() + " " + resident.getLastName());
                 System.out.println("Display Name auto-set to: " + user.getDisplayName());
-                password = readPassword();
+                password = readValidPassword();
             } else {
                 ConsoleUI.printInfo("Press Enter to keep the current value.");
                 resident.setFirstName(promptTextUpdate("First Name", resident.getFirstName()));
@@ -128,21 +136,22 @@ public class RegistrationView {
                 resident.setBirthDate(promptDateUpdate("Birth Date (YYYY-MM-DD)", resident.getBirthDate()));
                 resident.setSex(promptEnum("Sex", Sex.values(), true, resident.getSex()));
                 resident.setCivilStatus(promptEnum("Civil status", CivilStatus.values(), true, resident.getCivilStatus()));
-                resident.setContactNumber(promptTextUpdate("Contact Number", resident.getContactNumber()));
-                resident.setEmail(promptTextUpdate("Email Address", resident.getEmail()));
+                resident.setContactNumber(promptValidatedTextUpdate(
+                        "Contact Number", resident.getContactNumber(), ResidentFieldValidator::validateContactNumber));
+                resident.setEmail(promptValidatedTextUpdate(
+                        "Email Address", resident.getEmail(), ResidentFieldValidator::validateEmail));
                 resident.setOccupation(promptTextUpdate("Occupation", resident.getOccupation()));
                 resident.setHouseholdId(promptIntegerUpdate("Household ID", resident.getHouseholdId()));
                 resident.setRegisteredVoter(promptBooleanUpdate("Is a registered voter? (Y/N)", resident.isRegisteredVoter()));
                 resident.setHouseholdHead(promptBooleanUpdate("Is household head? (Y/N)", resident.isHouseholdHead()));
                 
                 System.out.println("\n--- Account Details ---");
-                user.setUsername(promptTextUpdate("Username", user.getUsername()));
-                user.setDisplayName(promptTextUpdate("Display Name", user.getDisplayName()));
-                
-                char[] newPassword = readPassword(true);
-                if (newPassword.length > 0) {
-                    password = newPassword;
-                }
+                user.setUsername(promptValidatedTextUpdate(
+                        "Username", user.getUsername(), this::validateUsername));
+                user.setDisplayName(promptValidatedTextUpdate(
+                        "Display Name", user.getDisplayName(), this::validateDisplayName));
+                ConsoleUI.printInfo("Re-enter the password to retry registration.");
+                password = readValidPassword();
             }
 
             String result = registrationController.registerNewResident(resident, user, password);
@@ -177,12 +186,28 @@ public class RegistrationView {
         return input.isEmpty() ? null : input;
     }
 
+    private String promptValidatedOptional(String label, Function<String, String> validator) {
+        while (true) {
+            String value = promptOptional(label);
+            String validationError = validator.apply(value);
+            if (validationError == null) {
+                return ResidentFieldValidator.normalizeOptional(value);
+            }
+            ConsoleUI.printError(validationError + ".");
+        }
+    }
+
     private LocalDate promptDate(String label) {
         while (true) {
             ConsoleUI.printPrompt(label);
             String input = scanner.nextLine().trim();
             try {
-                return LocalDate.parse(input);
+                LocalDate date = LocalDate.parse(input);
+                String validationError = ResidentFieldValidator.validateBirthDate(date);
+                if (validationError == null) {
+                    return date;
+                }
+                ConsoleUI.printError(validationError + ".");
             } catch (DateTimeParseException ignored) {
                 ConsoleUI.printError("Please enter a valid date in YYYY-MM-DD format.");
             }
@@ -260,13 +285,31 @@ public class RegistrationView {
         return input.isEmpty() ? currentValue : input;
     }
 
+    private String promptValidatedTextUpdate(String fieldName,
+                                             String currentValue,
+                                             Function<String, String> validator) {
+        while (true) {
+            String value = promptTextUpdate(fieldName, currentValue);
+            String validationError = validator.apply(value);
+            if (validationError == null) {
+                return ResidentFieldValidator.normalizeOptional(value);
+            }
+            ConsoleUI.printError(validationError);
+        }
+    }
+
     private LocalDate promptDateUpdate(String fieldName, LocalDate currentValue) {
         while (true) {
             ConsoleUI.printPrompt(String.format("%s [%s]: ", fieldName, currentValue));
             String input = scanner.nextLine().trim();
             if (input.isEmpty()) return currentValue;
             try {
-                return LocalDate.parse(input);
+                LocalDate date = LocalDate.parse(input);
+                String validationError = ResidentFieldValidator.validateBirthDate(date);
+                if (validationError == null) {
+                    return date;
+                }
+                ConsoleUI.printError(validationError + ".");
             } catch (DateTimeParseException ignored) {
                 ConsoleUI.printError("Please enter a valid date in YYYY-MM-DD format.");
             }
@@ -303,6 +346,18 @@ public class RegistrationView {
     private char[] readPassword() {
         return readPassword(false);
     }
+
+    private char[] readValidPassword() {
+        while (true) {
+            char[] password = readPassword();
+            String validationError = validatePassword(password);
+            if (validationError == null) {
+                return password;
+            }
+            Arrays.fill(password, '\0');
+            ConsoleUI.printError(validationError);
+        }
+    }
     
     private char[] readPassword(boolean isUpdate) {
         Console console = System.console();
@@ -324,6 +379,51 @@ public class RegistrationView {
         } else {
             ConsoleUI.printError(result != null ? result : "Operation failed");
         }
+    }
+
+    private String promptUsername(String label) {
+        while (true) {
+            String username = promptRequired(label);
+            String validationError = validateUsername(username);
+            if (validationError == null) {
+                return username;
+            }
+            ConsoleUI.printError(validationError);
+        }
+    }
+
+    private String promptDisplayName(String label) {
+        while (true) {
+            String displayName = promptRequired(label);
+            String validationError = validateDisplayName(displayName);
+            if (validationError == null) {
+                return displayName;
+            }
+            ConsoleUI.printError(validationError);
+        }
+    }
+
+    private String validateUsername(String username) {
+        return username != null && USERNAME_PATTERN.matcher(username.trim()).matches()
+                ? null
+                : "Username must be 4-50 characters using letters, numbers, dots, underscores, or hyphens.";
+    }
+
+    private String validateDisplayName(String displayName) {
+        return displayName != null && !displayName.isBlank() &&
+                displayName.trim().length() <= MAXIMUM_DISPLAY_NAME_LENGTH
+                ? null
+                : "Display name is required and must not exceed 150 characters.";
+    }
+
+    private String validatePassword(char[] password) {
+        if (password == null || password.length < 8) {
+            return "Password must contain at least 8 characters.";
+        }
+        if (new String(password).getBytes(StandardCharsets.UTF_8).length > 72) {
+            return "Password must not exceed 72 UTF-8 bytes.";
+        }
+        return null;
     }
 
     private void pause() {

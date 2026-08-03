@@ -56,7 +56,7 @@ public class UserRepoImpl implements UserRepo {
 
     @Override
     public List<User> getAll() throws SQLException {
-        String sql = "SELECT " + USER_COLUMNS + " FROM users ORDER BY display_name, username";
+        String sql = "SELECT " + USER_COLUMNS + " FROM users ORDER BY user_id ASC";
         return queryUsers(sql);
     }
 
@@ -68,7 +68,7 @@ public class UserRepoImpl implements UserRepo {
                    OR display_name LIKE ?
                    OR role LIKE ?
                    OR account_status LIKE ?
-                ORDER BY display_name, username
+                ORDER BY user_id ASC
                 LIMIT ?
                 """;
         List<User> users = new ArrayList<>();
